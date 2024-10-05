@@ -116,9 +116,9 @@ class Recording:
         for line in mythutil.stdout.splitlines():
             logger.info(line)
 
-            if mythutil.returncode != 0:
-                self.job.update(comment="Comskip failed", status=Job.ERRORED)
-                raise Exception("mythutil failed")
+        if mythutil.returncode != 0:
+            self.job.update(comment="Comskip failed", status=Job.ERRORED)
+            raise Exception("mythutil failed")
 
         self.rec.update(commflagged=True)
 
