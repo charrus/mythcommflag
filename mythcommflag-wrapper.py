@@ -5,7 +5,8 @@
 # Python Script
 # Author: Charlie Rusbridger
 # Purpose
-# This python script is intended as a wrapper arroud comskip as an alterntative to the built in advert detection.
+# This python script is intended as a wrapper arroud comskip as an 
+# alterntative to the built in advert detection.
 # ---------------------------
 __title__ = "MyCommFlagWrapper"
 __author__ = "Charlie Rusbridger"
