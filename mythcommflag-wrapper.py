@@ -24,7 +24,7 @@ from MythTV import Job, MythDB, Recorded
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
-logger = logging.getLogger(Path(__file__).name)
+logger = logging.getLogger(__title__)
 
 
 @dataclass
