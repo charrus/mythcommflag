@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+# ---------------------------
+# Name: mythcommflagwrapper.py
+# Python Script
+# Author: Charlie Rusbridger
+# Purpose
+# This python script is intended as a wrapper arroud comskip as an alterntative to the built in advert detection.
+# ---------------------------
+__title__ = "MyCommFlagWrapper"
+__author__ = "Charlie Rusbridger"
+__version__ = "v0.1.0"
 
 import argparse
 import datetime
@@ -137,7 +148,7 @@ def main():
         filename=LOGFILE,
         level=numeric_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt='%Y-%m-%d %H:%M:%S',
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
     logger.info("Starting new run; options:")
