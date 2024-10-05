@@ -67,7 +67,7 @@ class Recording:
                 self.job.update(comment="Comskip failed", status=Job.ERRORED)
                 raise Exception("comskip failed")
             elif comskip.returncode == 1:
-                self.job.update(comment=line, status=Job.FINISHED)
+                self.job.update(comment="No breaks found", status=Job.FINISHED)
                 return []
 
             clre = re.compile(r"(\d+)\s+(\d+)")
