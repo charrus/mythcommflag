@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# The is from https://www.mythtv.org/wiki/Script_-_RemoveCommercials
+# The is from https://www.mythtv.org/wiki/Mythcommflag-wrapper
 #
 # place in /usr/bin/
 # Version using mythutil for 0.25+ as it no longer needs mythexport: Only checked on Freesat HD but it should work with 
