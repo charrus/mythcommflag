@@ -62,7 +62,7 @@ class Recording:
             tmpdir = Path(tmp)
             comskip = subprocess.run(
                 [
-                    "comskip",
+                    "/usr/local/bin/comskip",
                     "--ini=/usr/local/bin/cpruk.ini",
                     f"--output={str(tmpdir)}",
                     "--output-filename=cutlist",
@@ -97,7 +97,7 @@ class Recording:
     def set_skiplist(self, cutlist=list):
         """Sets the skiplist for the recording"""
 
-        logger.info(f"Calling: mythutil --set_skiplist {','.join(cutlist)}")
+        logger.info(f"Calling: mythutil --setskiplist {','.join(cutlist)}")
         logger.info(
             f"         --chanid={self.chanid} --starttime={self.starttime}"
         )
@@ -105,7 +105,7 @@ class Recording:
         mythutil = subprocess.run(
             [
                 "mythutil",
-                "--set_skiplist",
+                "--setskiplist",
                 ",".join(cutlist),
                 f"--chanid={self.chanid}",
                 f"--starttime={self.starttime}",
@@ -115,6 +115,8 @@ class Recording:
         )
 
         for line in mythutil.stdout.splitlines():
+            logger.info(line)
+        for line in mythutil.stderr.splitlines():
             logger.info(line)
 
         if mythutil.returncode != 0:
