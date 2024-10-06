@@ -82,8 +82,6 @@ class Recording:
                 self.job.update(comment="Comskip failed", status=Job.ERRORED)
                 raise Exception("comskip failed")
             elif comskip.returncode == 1:
-                self.job.update(comment="No breaks found", status=Job.FINISHED)
-                self.rec.update(commflagged=True)
                 return []
 
             clre = re.compile(r"(\d+)\s+(\d+)")
@@ -100,19 +98,20 @@ class Recording:
     def set_skiplist(self, cutlist=list):
         """Sets the skiplist for the recording"""
 
-        logger.info(f"Calling: mythutil --setskiplist {','.join(cutlist)}")
-        logger.info(
-            f"         --chanid={self.chanid} --starttime={self.starttime}"
-        )
-
-        mythutil = subprocess.run(
-            [
+        cutlistargs = [
                 "mythutil",
-                "--setskiplist",
-                ",".join(cutlist),
                 f"--chanid={self.chanid}",
                 f"--starttime={self.starttime}",
-            ],
+        ]
+        if cutlist:
+            cutlistargs.append = ["--setskiplist", ",".join(cutlist)]
+        else:
+            cutlistargs.append = ["--clearskiplist"]
+
+        logger.info(f"Running: {' '.join(cutlistargs)}")
+
+        mythutil = subprocess.run(
+            cutlistargs,
             capture_output=True,
             encoding="utf-8",
         )
@@ -164,8 +163,7 @@ def main():
     recording = Recording(jobid=args.jobid)
     recording.setup_recording()
     cutlist = recording.get_skiplist()
-    if cutlist:
-        recording.set_skiplist(cutlist)
+    recording.set_skiplist(cutlist)
 
 
 if __name__ == "__main__":
