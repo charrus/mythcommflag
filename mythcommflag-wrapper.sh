@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# The is from https://www.mythtv.org/wiki/Script_-_RemoveCommercials
+#
 # place in /usr/bin/
 # Version using mythutil for 0.25+ as it no longer needs mythexport: Only checked on Freesat HD but it should work with 
 # Freeview HD if they have AC3 audio.  Changed ffmpeg to ffmpeg, as ffmpeg is deprecated. ffmpeg used the Audio Descriptive
