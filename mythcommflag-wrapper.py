@@ -75,6 +75,8 @@ class Recording:
 
             for line in comskip.stdout.splitlines():
                 logger.info(line)
+            for line in comskip.stderr.splitlines():
+                logger.error(line)
 
             if comskip.returncode > 1:
                 self.job.update(comment="Comskip failed", status=Job.ERRORED)
