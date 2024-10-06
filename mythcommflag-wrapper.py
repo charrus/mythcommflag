@@ -17,11 +17,11 @@ import datetime
 import logging
 import re
 import subprocess
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 from MythTV import Job, MythDB, Recorded
+from tempfile import TemporaryDirectory
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
@@ -49,19 +49,20 @@ class Recording:
         dirname = Path(dirs[0].dirname)
         self.filename = dirname / self.rec.basename
 
+    def get_skiplist(self):
+        """Run comskip to generate a skiplist for the recordin."""
+
         self.job.update(comment="Scanning", status=Job.RUNNING)
 
         logger.info(f"filename:  {self.filename}")
         logger.info(f"starttime: {self.starttime}")
         logger.info(f"chanid:    {self.chanid}")
 
-    def get_cutlist(self):
-
-        with tempfile.TemporaryDirectory() as tmp:
+        with TemporaryDirectory() as tmp:
             tmpdir = Path(tmp)
             comskip = subprocess.run(
                 [
-                    "/usr/local/bin/comskip",
+                    "comskip",
                     "--ini=/usr/local/bin/cpruk.ini",
                     f"--output={str(tmpdir)}",
                     "--output-filename=cutlist",
@@ -93,10 +94,10 @@ class Recording:
 
             return cutlist
 
-    def setskiplist(self, cutlist=list):
+    def set_skiplist(self, cutlist=list):
         """Sets the skiplist for the recording"""
 
-        logger.info(f"Calling: mythutil --setskiplist {','.join(cutlist)}")
+        logger.info(f"Calling: mythutil --set_skiplist {','.join(cutlist)}")
         logger.info(
             f"         --chanid={self.chanid} --starttime={self.starttime}"
         )
@@ -104,7 +105,7 @@ class Recording:
         mythutil = subprocess.run(
             [
                 "mythutil",
-                "--setskiplist",
+                "--set_skiplist",
                 ",".join(cutlist),
                 f"--chanid={self.chanid}",
                 f"--starttime={self.starttime}",
@@ -157,9 +158,9 @@ def main():
 
     recording = Recording(jobid=args.jobid)
     recording.setup_recording()
-    cutlist = recording.get_cutlist()
+    cutlist = recording.get_skiplist()
     if cutlist:
-        recording.setskiplist(cutlist)
+        recording.set_skiplist(cutlist)
 
 
 if __name__ == "__main__":
