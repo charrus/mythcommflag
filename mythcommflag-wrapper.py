@@ -19,9 +19,9 @@ import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from MythTV import Job, MythDB, Recorded
-from tempfile import TemporaryDirectory
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
