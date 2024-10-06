@@ -62,7 +62,7 @@ class Recording:
             tmpdir = Path(tmp)
             comskip = subprocess.run(
                 [
-                    "/usr/local/bin/comskip",
+                    "comskip",
                     "--ini=/usr/local/bin/cpruk.ini",
                     f"--output={str(tmpdir)}",
                     "--output-filename=cutlist",
@@ -83,6 +83,7 @@ class Recording:
                 raise Exception("comskip failed")
             elif comskip.returncode == 1:
                 self.job.update(comment="No breaks found", status=Job.FINISHED)
+                self.rec.update(commflagged=True)
                 return []
 
             clre = re.compile(r"(\d+)\s+(\d+)")
