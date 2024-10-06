@@ -104,9 +104,9 @@ class Recording:
                 f"--starttime={self.starttime}",
         ]
         if cutlist:
-            cutlistargs.append = ["--setskiplist", ",".join(cutlist)]
+            cutlistargs += ["--setskiplist", ",".join(cutlist)]
         else:
-            cutlistargs.append = ["--clearskiplist"]
+            cutlistargs += ["--clearskiplist"]
 
         logger.info(f"Running: {' '.join(cutlistargs)}")
 
