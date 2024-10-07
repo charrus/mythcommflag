@@ -67,7 +67,7 @@ class Recording:
             Job.FINISHED,
         ):
             self.job.update(comment="Destructor called", status=Job.FINISHED)
-            logger.error("Destructor called whith unexpected status")
+            logger.error("Destructor called with unexpected status")
 
     def call_comskip(self):
         """Run comskip to generate a skiplist for the recordin."""
