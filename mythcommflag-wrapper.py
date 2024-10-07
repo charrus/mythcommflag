@@ -56,6 +56,7 @@ class Recording:
         dirname = Path(dirs[0].dirname)
         self.filename = dirname / self.rec.basename
 
+    # This could be done better with weakref finalizer objects
     def __del__(self):
         """This is to ensure that the job is marked as finished so that the
         job queue isn't blocked on this phantom job thats finished."""
