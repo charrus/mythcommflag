@@ -17,7 +17,6 @@ import datetime
 import logging
 import re
 import subprocess
-from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -28,31 +27,53 @@ LOGFILE = "/var/log/mythtv/mythcommflag.log"
 logger = logging.getLogger(__title__)
 
 
-@dataclass
 class Recording:
-    jobid: str
+    def __init__(self, **opts):
+        """Setup the DB connections and the recording. Convert starttime into
+        UTC if coming from a job, and get the filename of the recording."""
 
-    def setup_recording(self):
         self.db = MythDB()
-        self.job = Job(self.jobid)
-        self.job.update(status=Job.STARTING)
+
+        # This needs work - shouldn't there be two instantiators depending on
+        # options provided?
+
+        if opts.get("jobid"):
+            self.job = Job(opts.get("jobid"))
+            self.chanid = self.job.chanid
+            self.starttime = self.job.starttime.astimezone(
+                tz=datetime.timezone.utc
+            ).strftime("%Y%m%d%H%M%S")
+            self.job.update(status=Job.STARTING)
+        elif opts.get("chanid") and opts.get("starttime"):
+            self.chanid = opts.get("chanid")
+            self.starttime = opts.get("starttime")
+        else:
+            raise ValueError("Need either jobid or starttime and chanid")
 
         self.rec = Recorded((self.job.chanid, self.job.starttime), db=self.db)
-
-        self.chanid = self.rec.chanid
-
-        self.starttime = self.rec.starttime.astimezone(
-            tz=datetime.timezone.utc
-        ).strftime("%Y%m%d%H%M%S")
 
         dirs = list(self.db.getStorageGroup(groupname=self.rec.storagegroup))
         dirname = Path(dirs[0].dirname)
         self.filename = dirname / self.rec.basename
 
-    def get_skiplist(self):
+    def __del__(self):
+        """This is to ensure that the job is marked as finished so that others
+        can run when the status indicates the job is still running"""
+
+        if self.job and self.job.status not in (
+            Job.STARTING,
+            Job.RUNNING,
+            Job.ERRORED,
+            Job.FINISHED,
+        ):
+            self.job.update(comment="Destructor called", status=Job.FINISHED)
+            logger.error("Destructor called whith unexpected status")
+
+    def call_comskip(self):
         """Run comskip to generate a skiplist for the recordin."""
 
-        self.job.update(comment="Scanning", status=Job.RUNNING)
+        if self.job:
+            self.job.update(comment="Scanning", status=Job.RUNNING)
 
         logger.info(f"filename:  {self.filename}")
         logger.info(f"starttime: {self.starttime}")
@@ -79,7 +100,10 @@ class Recording:
                 logger.error(line)
 
             if comskip.returncode > 1:
-                self.job.update(comment="Comskip failed", status=Job.ERRORED)
+                if self.job:
+                    self.job.update(
+                        comment="Comskip failed", status=Job.ERRORED
+                    )
                 raise Exception("comskip failed")
             elif comskip.returncode == 1:
                 return []
@@ -96,12 +120,12 @@ class Recording:
             return cutlist
 
     def set_skiplist(self, cutlist=list):
-        """Sets the skiplist for the recording"""
+        """Sets the skiplist for the recording, or clear if no breaks found."""
 
         cutlistargs = [
-                "mythutil",
-                f"--chanid={self.chanid}",
-                f"--starttime={self.starttime}",
+            "mythutil",
+            f"--chanid={self.chanid}",
+            f"--starttime={self.starttime}",
         ]
         if cutlist:
             cutlistargs += ["--setskiplist", ",".join(cutlist)]
@@ -122,14 +146,17 @@ class Recording:
             logger.error(line)
 
         if mythutil.returncode != 0:
-            self.job.update(comment="mythutil failed", status=Job.ERRORED)
+            if self.job:
+                self.job.update(comment="mythutil failed", status=Job.ERRORED)
             raise Exception("mythutil failed")
 
         self.rec.update(commflagged=True)
 
-        self.job.update(
-            comment=f"{len(cutlist)} break(s) found.", status=Job.FINISHED
-        )
+        if self.job:
+            self.job.update(
+                comment=f"{len(cutlist)} break(s) found.", status=Job.FINISHED
+            )
+        logger.info(f"{len(cutlist)} break(s) found.")
 
 
 def main():
@@ -140,7 +167,16 @@ def main():
         description="Wrapper around comflag for MythTV"
     )
 
-    parser.add_argument("--jobid", type=str, required=True, help="The JobID")
+    parser.add_argument("--jobid", type=str, required=False, help="The JobID")
+    parser.add_argument(
+        "--chanid", type=str, required=False, help="The channel id"
+    )
+    parser.add_argument(
+        "--starttime",
+        type=str,
+        required=False,
+        help="The start time in UTC as YYMMDDhhmmss",
+    )
     parser.add_argument("--loglevel", type=str, required=False, default="info")
 
     args = parser.parse_args()
@@ -157,12 +193,16 @@ def main():
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    logger.info("Starting new run; options:")
-    logger.info(f"jobid {args.jobid}")
+    if not args.jobid and not (args.starttime and args.chanid):
+        logger.error("Expected either --jobid or --chanid and --starttime")
+        raise RuntimeError(
+            "Expected either --jobid or --chanid and --starttime"
+        )
+
+    logger.info(f"Starting new run; options: {args}")
 
     recording = Recording(jobid=args.jobid)
-    recording.setup_recording()
-    cutlist = recording.get_skiplist()
+    cutlist = recording.call_comskip()
     recording.set_skiplist(cutlist)
 
 
