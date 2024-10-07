@@ -57,8 +57,8 @@ class Recording:
         self.filename = dirname / self.rec.basename
 
     def __del__(self):
-        """This is to ensure that the job is marked as finished so that others
-        can run when the status indicates the job is still running"""
+        """This is to ensure that the job is marked as finished so that the
+        job queue isn't blocked on this phantom job thats finished."""
 
         if self.job and self.job.status not in (
             Job.STARTING,
