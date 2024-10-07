@@ -82,15 +82,21 @@ class Recording:
 
         with TemporaryDirectory() as tmp:
             tmpdir = Path(tmp)
-            comskip = subprocess.run(
-                [
+
+            comskip_args = [
                     "comskip",
                     "--ini=/usr/local/bin/cpruk.ini",
                     f"--output={str(tmpdir)}",
                     "--output-filename=cutlist",
                     "--ts",
                     str(self.filename),
-                ],
+                ]
+
+            # To assist with running this via the GUI to fix false positives.
+            logger.info(f"Running: {' '.join(comskip_args)}")
+
+            comskip = subprocess.run(
+                comskip_args,
                 capture_output=True,
                 encoding="utf-8",
             )
@@ -123,20 +129,20 @@ class Recording:
     def set_skiplist(self, cutlist=list):
         """Sets the skiplist for the recording, or clear if no breaks found."""
 
-        cutlistargs = [
+        skiplistargs = [
             "mythutil",
             f"--chanid={self.chanid}",
             f"--starttime={self.starttime}",
         ]
         if cutlist:
-            cutlistargs += ["--setskiplist", ",".join(cutlist)]
+            skiplistargs += ["--setskiplist", ",".join(cutlist)]
         else:
-            cutlistargs += ["--clearskiplist"]
+            skiplistargs += ["--clearskiplist"]
 
-        logger.info(f"Running: {' '.join(cutlistargs)}")
+        logger.info(f"Running: {' '.join(skiplistargs)}")
 
         mythutil = subprocess.run(
-            cutlistargs,
+            skiplistargs,
             capture_output=True,
             encoding="utf-8",
         )
