@@ -15,6 +15,7 @@ __version__ = "v0.1.0"
 import argparse
 import datetime
 import logging
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -32,6 +33,10 @@ class Recording:
         """Setup the DB connections and the recording. Convert starttime into
         UTC if coming from a job, and get the filename of the recording."""
 
+        self.jobid = None
+        self.chanid = None
+        self.starttime = None
+
         self.db = MythDB()
 
         # This needs work - shouldn't there be two instantiators depending on
@@ -47,10 +52,11 @@ class Recording:
         elif opts.get("chanid") and opts.get("starttime"):
             self.chanid = opts.get("chanid")
             self.starttime = opts.get("starttime")
+            self.job = None
         else:
             raise ValueError("Need either jobid or starttime and chanid")
 
-        self.rec = Recorded((self.job.chanid, self.job.starttime), db=self.db)
+        self.rec = Recorded((self.chanid, self.starttime), db=self.db)
 
         dirs = list(self.db.getStorageGroup(groupname=self.rec.storagegroup))
         dirname = Path(dirs[0].dirname)
@@ -84,13 +90,13 @@ class Recording:
             tmpdir = Path(tmp)
 
             comskip_args = [
-                    "comskip",
-                    "--ini=/usr/local/bin/cpruk.ini",
-                    f"--output={str(tmpdir)}",
-                    "--output-filename=cutlist",
-                    "--ts",
-                    str(self.filename),
-                ]
+                "comskip",
+                "--ini=/usr/local/bin/cpruk.ini",
+                f"--output={str(tmpdir)}",
+                "--output-filename=cutlist",
+                "--ts",
+                str(self.filename),
+            ]
 
             # To assist with running this via the GUI to fix false positives.
             logger.info(f"Running: {' '.join(comskip_args)}")
@@ -123,6 +129,113 @@ class Recording:
                     m = clre.match(line)
                     if m:
                         cutlist.append(f"{m.group(1)}-{m.group(2)}")
+
+            return cutlist
+
+    def call_selence_detect(self):
+        """Run ffmpeg and mp3splt to generate a skiplist for the recording."""
+
+        if self.job:
+            self.job.update(comment="Scanning", status=Job.RUNNING)
+
+        logger.info(f"filename:  {self.filename}")
+        logger.info(f"starttime: {self.starttime}")
+        logger.info(f"chanid:    {self.chanid}")
+        logger.info(f"title:     {self.rec.title}")
+        logger.info(f"subtitle:  {self.rec.subtitle}")
+
+        clre = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)")
+        cutlist = []
+        mp3lines = []
+        
+        with TemporaryDirectory() as tmp:
+            tmpdir = Path(tmp)
+            audio_file = tmpdir / "sound.mp2"
+
+            # mp3splt insists on using cwd for the logfile
+            oldcwd = os.getcwd()
+            os.chdir(tmpdir)
+
+            ffmpeg_args = [
+                "ffmpeg",
+                "-i",
+                str(self.filename),
+                "-acodec",
+                "copy",
+                str(audio_file),
+            ]
+
+            # To assist with running this manually to fix false positives.
+            logger.info(f"Running: {' '.join(ffmpeg_args)}")
+
+            ffmpeg = subprocess.run(
+                ffmpeg_args,
+                capture_output=True,
+                encoding="utf-8",
+            )
+
+            for line in ffmpeg.stdout.splitlines():
+                logger.info(line)
+
+            if ffmpeg.returncode != 0:
+                if self.job:
+                    self.job.update(comment="ffmpeg failed", status=Job.ERRORED)
+                raise Exception("ffmpeg failed")
+
+            mp3splt_args = [
+                "mp3splt",
+                "-s",
+                "-p",
+                "th=-80,min=0.12",
+                str(audio_file),
+            ]
+
+            # To assist with running this manually to fix false positives.
+            logger.info(f"Running: {' '.join(mp3splt_args)}")
+
+            mp3splt = subprocess.run(
+                mp3splt_args,
+                capture_output=True,
+                encoding="utf-8",
+            )
+
+            for line in mp3splt.stdout.splitlines():
+                logger.info(line)
+
+            if mp3splt.returncode != 0:
+                if self.job:
+                    self.job.update(
+                        comment="mp3splt failed", status=Job.ERRORED
+                    )
+                raise Exception("mp3splt failed")
+
+            with open(tmpdir / "mp3splt.log") as cl:
+                for line in cl.readlines():
+                    mp3lines.append(line)
+
+            os.chdir(oldcwd)
+
+        start = 0
+        finish = 0
+        filtered_mp3lies = filter()
+        sorted_mp3lines = sorted(mp3lines, key=lambda val: float(val.split()[0]))
+        for mp3line in sorted_mp3lines:
+            m = clre.match(mp3line.strip())
+            if m:
+                if m.group(2) < start:
+                    continue
+                elif m.group(2) - start < 400:
+                    finish = m.group(2)
+                else:
+                    cutlist.append(
+                        f"{int(start*25+1)}-{int(finish*25-25)}"
+                    )
+                    start = m.group(1)
+                    finish = m.group(2)
+
+                cutlist.append(f"{m.group(1)}-{m.group(2)}")
+
+
 
             return cutlist
 
@@ -208,8 +321,12 @@ def main():
 
     logger.info(f"Starting new run; options: {args}")
 
-    recording = Recording(jobid=args.jobid)
-    cutlist = recording.call_comskip()
+    if args.jobid:
+        recording = Recording(jobid=args.jobid)
+    else:
+        recording = Recording(chanid=args.chanid, starttime=args.starttime)
+    # cutlist = recording.call_comskip()
+    cutlist = recording.call_selence_detect()
     recording.set_skiplist(cutlist)
 
 
