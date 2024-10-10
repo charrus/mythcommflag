@@ -109,14 +109,10 @@ class Recording:
 
             for line in comskip.stdout.splitlines():
                 logger.info(line)
-            for line in comskip.stderr.splitlines():
-                logger.error(line)
 
             if comskip.returncode > 1:
                 if self.job:
-                    self.job.update(
-                        comment="Comskip failed", status=Job.ERRORED
-                    )
+                    self.job.update(comment="Comskip failed", status=Job.ERRORED)
                 raise Exception("comskip failed")
             elif comskip.returncode == 1:
                 return []
@@ -147,7 +143,7 @@ class Recording:
         clre = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)")
         cutlist = []
         mp3lines = []
-        
+
         with TemporaryDirectory() as tmp:
             tmpdir = Path(tmp)
             audio_file = tmpdir / "sound.mp2"
@@ -204,9 +200,7 @@ class Recording:
 
             if mp3splt.returncode != 0:
                 if self.job:
-                    self.job.update(
-                        comment="mp3splt failed", status=Job.ERRORED
-                    )
+                    self.job.update(comment="mp3splt failed", status=Job.ERRORED)
                 raise Exception("mp3splt failed")
 
             with open(tmpdir / "mp3splt.log") as cl:
@@ -217,7 +211,7 @@ class Recording:
 
         start = 0
         finish = 0
-        filtered_mp3lies = filter()
+        filtered_mp3liens = filter(lambda x: clre.match(x, mp3lines))
         sorted_mp3lines = sorted(mp3lines, key=lambda val: float(val.split()[0]))
         for mp3line in sorted_mp3lines:
             m = clre.match(mp3line.strip())
@@ -227,15 +221,11 @@ class Recording:
                 elif m.group(2) - start < 400:
                     finish = m.group(2)
                 else:
-                    cutlist.append(
-                        f"{int(start*25+1)}-{int(finish*25-25)}"
-                    )
+                    cutlist.append(f"{int(start*25+1)}-{int(finish*25-25)}")
                     start = m.group(1)
                     finish = m.group(2)
 
                 cutlist.append(f"{m.group(1)}-{m.group(2)}")
-
-
 
             return cutlist
 
@@ -283,14 +273,10 @@ def main():
     """Get arguments from the command line, grab the job information for the
     recording and generate a cutlist for mythutil with comskip."""
 
-    parser = argparse.ArgumentParser(
-        description="Wrapper around comflag for MythTV"
-    )
+    parser = argparse.ArgumentParser(description="Wrapper around comflag for MythTV")
 
     parser.add_argument("--jobid", type=str, required=False, help="The JobID")
-    parser.add_argument(
-        "--chanid", type=str, required=False, help="The channel id"
-    )
+    parser.add_argument("--chanid", type=str, required=False, help="The channel id")
     parser.add_argument(
         "--starttime",
         type=str,
@@ -315,9 +301,7 @@ def main():
 
     if not args.jobid and not (args.starttime and args.chanid):
         logger.error("Expected either --jobid or --chanid and --starttime")
-        raise RuntimeError(
-            "Expected either --jobid or --chanid and --starttime"
-        )
+        raise RuntimeError("Expected either --jobid or --chanid and --starttime")
 
     logger.info(f"Starting new run; options: {args}")
 

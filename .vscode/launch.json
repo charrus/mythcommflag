@@ -15,7 +15,8 @@
                 "--starttime", "20241009170000",
 //                "--jobid", "6453",
                 "--chanid", "77986"
-            ]
+            ],
+            "justMyCode": false
         }
     ]
 }
