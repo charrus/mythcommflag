@@ -29,7 +29,7 @@ logger = logging.getLogger(__title__)
 
 
 class Recording:
-    def __init__(self, **opts):
+    def __init__(self, opts, jobid=None):
         """Setup the DB connections and the recording. Convert starttime into
         UTC if coming from a job, and get the filename of the recording."""
 
@@ -42,25 +42,36 @@ class Recording:
         # This needs work - shouldn't there be two instantiators depending on
         # options provided?
 
-        if opts.get("jobid"):
-            self.job = Job(opts.get("jobid"))
-            self.chanid = self.job.chanid
-            self.starttime = self.job.starttime.astimezone(
-                tz=datetime.timezone.utc
-            ).strftime("%Y%m%d%H%M%S")
+        if jobid:
+            self.job = Job(jobid)
+            # self.chanid = self.job.chanid
+            # self.starttime = self.job.starttime.astimezone(
+            #    tz=datetime.timezone.utc
+            # ).strftime("%Y%m%d%H%M%S")
             self.job.update(status=Job.STARTING)
-        elif opts.get("chanid") and opts.get("starttime"):
-            self.chanid = opts.get("chanid")
-            self.starttime = opts.get("starttime")
-            self.job = None
         else:
-            raise ValueError("Need either jobid or starttime and chanid")
+            self.job = None
+        # elif opts.get("chanid") and opts.get("starttime"):
+        self.chanid = opts.chanid
+        self.starttime = opts.starttime
+        #    self.job = None
+        # else:
+        #    raise ValueError("Need either jobid or starttime and chanid")
 
         self.rec = Recorded((self.chanid, self.starttime), db=self.db)
+        self.program = self.rec.getProgram()
+        self.callsign = self.program.callsign
 
         dirs = list(self.db.getStorageGroup(groupname=self.rec.storagegroup))
         dirname = Path(dirs[0].dirname)
         self.filename = dirname / self.rec.basename
+
+        logger.info(f"filename:  {self.filename}")
+        logger.info(f"starttime: {self.starttime}")
+        logger.info(f"chanid:    {self.chanid}")
+        logger.info(f"title:     {self.rec.title}")
+        logger.info(f"subtitle:  {self.rec.subtitle}")
+        logger.info(f"callsign:  {self.callsign}")
 
     # This could be done better with weakref finalizer objects
     def __del__(self):
@@ -75,6 +86,14 @@ class Recording:
         ):
             self.job.update(comment="Destructor called", status=Job.FINISHED)
             logger.error("Destructor called with unexpected status")
+
+    def get_skiplist(self):
+        """Get skiplist - depending on the callsign"""
+
+        if "QUEST" in self.callsign:
+            return []
+        else:
+            return self.call_comskip()
 
     def call_comskip(self):
         """Run comskip to generate a skiplist for the recordin."""
@@ -128,20 +147,12 @@ class Recording:
 
             return cutlist
 
-    def call_selence_detect(self):
+    def call_silence_detect(self):
         """Run ffmpeg and mp3splt to generate a skiplist for the recording."""
 
         if self.job:
             self.job.update(comment="Scanning", status=Job.RUNNING)
 
-        logger.info(f"filename:  {self.filename}")
-        logger.info(f"starttime: {self.starttime}")
-        logger.info(f"chanid:    {self.chanid}")
-        logger.info(f"title:     {self.rec.title}")
-        logger.info(f"subtitle:  {self.rec.subtitle}")
-
-        clre = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)")
-        cutlist = []
         mp3lines = []
 
         with TemporaryDirectory() as tmp:
@@ -205,29 +216,29 @@ class Recording:
 
             with open(tmpdir / "mp3splt.log") as cl:
                 for line in cl.readlines():
-                    mp3lines.append(line)
+                    mp3lines.append(line.strip())
 
             os.chdir(oldcwd)
 
+        clre = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)")
+        cutlist = []
         start = 0
         finish = 0
-        filtered_mp3liens = filter(lambda x: clre.match(x, mp3lines))
-        sorted_mp3lines = sorted(mp3lines, key=lambda val: float(val.split()[0]))
+        filtered_mp3lines = [x for x in mp3lines if clre.match(x)]
+        sorted_mp3lines = sorted(
+            filtered_mp3lines, key=lambda val: float(val.split()[0])
+        )
         for mp3line in sorted_mp3lines:
-            m = clre.match(mp3line.strip())
-            if m:
-                if m.group(2) < start:
-                    continue
-                elif m.group(2) - start < 400:
-                    finish = m.group(2)
-                else:
-                    cutlist.append(f"{int(start*25+1)}-{int(finish*25-25)}")
-                    start = m.group(1)
-                    finish = m.group(2)
+            m = clre.match(mp3line)
+            duration = (float(m.group(1)), float(m.group(2)))
 
-                cutlist.append(f"{m.group(1)}-{m.group(2)}")
+            if duration[0] - start < 400:
+                finish = duration[1]
+            else:
+                cutlist.append(f"{int(start*25+1)}-{int(finish*25-25)}")
+                start, finish = duration
 
-            return cutlist
+        return cutlist
 
     def set_skiplist(self, cutlist=list):
         """Sets the skiplist for the recording, or clear if no breaks found."""
@@ -306,11 +317,11 @@ def main():
     logger.info(f"Starting new run; options: {args}")
 
     if args.jobid:
-        recording = Recording(jobid=args.jobid)
+        recording = Recording(args, jobid=args.jobid)
     else:
-        recording = Recording(chanid=args.chanid, starttime=args.starttime)
-    # cutlist = recording.call_comskip()
-    cutlist = recording.call_selence_detect()
+        # recording = Recording(chanid=args.chanid, starttime=args.starttime)
+        recording = Recording(args)
+    cutlist = recording.get_skiplist()
     recording.set_skiplist(cutlist)
 
 

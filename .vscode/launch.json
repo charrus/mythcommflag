@@ -12,8 +12,8 @@
             "console": "integratedTerminal",
             "args": [
 //                "--recid", "105722",
-                "--starttime", "20241009170000",
-//                "--jobid", "6453",
+                "--starttime", "20241009160000",
+//                "--jobid", "6488",
                 "--chanid", "77986"
             ],
             "justMyCode": false
