@@ -44,7 +44,7 @@ class Recording:
 
         if opts.get("jobid"):
             self.jobid = opts.get("jobid")
-            logger.info(f"jobid: {self.jobid}")
+            logger.info(f"jobid:     {self.jobid}")
             self.job = Job(self.jobid)
             self.chanid = self.job.chanid
             self.starttime = self.starttime_dt.astimezone(
@@ -72,7 +72,6 @@ class Recording:
         self.filename = dirname / self.rec.basename
 
         logger.info(f"filename:  {self.filename}")
-
         logger.info(f"title:     {self.rec.title}")
         logger.info(f"subtitle:  {self.rec.subtitle}")
         logger.info(f"callsign:  {self.callsign}")
@@ -290,8 +289,8 @@ def main():
 
     parser = argparse.ArgumentParser(description="Wrapper around comflag for MythTV")
 
-    parser.add_argument("--jobid", type=str, required=False, help="The JobID")
-    parser.add_argument("--chanid", type=str, required=False, help="The channel id")
+    parser.add_argument("--jobid", type=str, required=False, help="The Job ID")
+    parser.add_argument("--chanid", type=str, required=False, help="The Channel id")
     parser.add_argument(
         "--starttime",
         type=str,
@@ -318,7 +317,7 @@ def main():
         logger.error("Expected either --jobid or --chanid and --starttime")
         raise RuntimeError("Expected either --jobid or --chanid and --starttime")
 
-    logger.info(f"Starting new run; options: {args}")
+    logger.debug(f"Starting new run; options: {args}")
 
     if args.jobid:
         recording = Recording(jobid=args.jobid)
