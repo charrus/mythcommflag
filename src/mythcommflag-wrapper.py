@@ -47,7 +47,7 @@ class Recording:
             logger.info(f"jobid:     {self.jobid}")
             self.job = Job(self.jobid)
             self.chanid = self.job.chanid
-            self.starttime = self.starttime.astimezone(
+            self.starttime = self.job.starttime.astimezone(
                 tz=datetime.timezone.utc
             ).strftime("%Y%m%d%H%M%S")
             self.rec = Recorded((self.chanid, self.job.starttime), db=self.db)
