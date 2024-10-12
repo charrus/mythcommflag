@@ -29,36 +29,41 @@ logger = logging.getLogger(__title__)
 
 
 class Recording:
-    def __init__(self, opts, jobid=None):
+    def __init__(self, **opts):
         """Setup the DB connections and the recording. Convert starttime into
         UTC if coming from a job, and get the filename of the recording."""
 
-        self.jobid = None
-        self.chanid = None
-        self.starttime = None
+        self.job = None
+        self.chanid = 0
+        self.starttime = "0"
 
         self.db = MythDB()
 
         # This needs work - shouldn't there be two instantiators depending on
         # options provided?
 
-        if jobid:
-            self.job = Job(jobid)
-            # self.chanid = self.job.chanid
-            # self.starttime = self.job.starttime.astimezone(
-            #    tz=datetime.timezone.utc
-            # ).strftime("%Y%m%d%H%M%S")
-            self.job.update(status=Job.STARTING)
-        else:
-            self.job = None
-        # elif opts.get("chanid") and opts.get("starttime"):
-        self.chanid = opts.chanid
-        self.starttime = opts.starttime
-        #    self.job = None
-        # else:
-        #    raise ValueError("Need either jobid or starttime and chanid")
+        if opts.get("jobid"):
+            self.jobid = opts.get("jobid")
+            logger.info(f"jobid: {self.jobid}")
+            self.job = Job(self.jobid)
+            self.chanid = self.job.chanid
+            self.starttime = self.starttime_dt.astimezone(
+                tz=datetime.timezone.utc
+            ).strftime("%Y%m%d%H%M%S")
+            self.rec = Recorded((self.chanid, self.job.starttime), db=self.db)
 
-        self.rec = Recorded((self.chanid, self.starttime), db=self.db)
+        elif opts.get("chanid") and opts.get("starttime"):
+            self.chanid = opts.get("chanid")
+            self.starttime = opts.get("starttime")
+            self.rec = Recorded((self.chanid, self.starttime), db=self.db)
+        else:
+            raise ValueError("jobid or starttime and chanid required")
+
+        logger.info(f"starttime: {self.starttime}")
+        logger.info(f"chanid:    {self.chanid}")
+
+        if self.job:
+            self.job.update(status=Job.STARTING)
         self.program = self.rec.getProgram()
         self.callsign = self.program.callsign
 
@@ -67,8 +72,7 @@ class Recording:
         self.filename = dirname / self.rec.basename
 
         logger.info(f"filename:  {self.filename}")
-        logger.info(f"starttime: {self.starttime}")
-        logger.info(f"chanid:    {self.chanid}")
+
         logger.info(f"title:     {self.rec.title}")
         logger.info(f"subtitle:  {self.rec.subtitle}")
         logger.info(f"callsign:  {self.callsign}")
@@ -96,7 +100,7 @@ class Recording:
             return self.call_comskip()
 
     def call_comskip(self):
-        """Run comskip to generate a skiplist for the recordin."""
+        """Run comskip to generate a skiplist for the recording."""
 
         if self.job:
             self.job.update(comment="Scanning", status=Job.RUNNING)
@@ -317,10 +321,9 @@ def main():
     logger.info(f"Starting new run; options: {args}")
 
     if args.jobid:
-        recording = Recording(args, jobid=args.jobid)
+        recording = Recording(jobid=args.jobid)
     else:
-        # recording = Recording(chanid=args.chanid, starttime=args.starttime)
-        recording = Recording(args)
+        recording = Recording(chanid=args.chanid, starttime=args.starttime)
     cutlist = recording.get_skiplist()
     recording.set_skiplist(cutlist)
 

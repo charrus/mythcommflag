@@ -11,10 +11,9 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-//                "--recid", "105722",
-                "--starttime", "20241009160000",
-//                "--jobid", "6488",
-                "--chanid", "77986"
+//                "--starttime", "20241009160000",
+                "--jobid", "6479",
+//                "--chanid", "77986"
             ],
             "justMyCode": false
         }
