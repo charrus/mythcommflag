@@ -13,16 +13,15 @@ __author__ = "Charlie Rusbridger"
 __version__ = "v0.1.0"
 
 import argparse
-import datetime
+from datetime import datetime, timezone
 import logging
-import os
 import re
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List
 
-from MythTV import Job, MythDB, Recorded
+from MythTV import Job, MythDB, Recorded  # type: ignore
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
@@ -31,12 +30,11 @@ logger = logging.getLogger(__title__)
 
 class Recording:
     def __init__(self, **opts):
-        """Setup the DB connections and the recording. Convert starttime into
-        UTC if coming from a job, and get the filename of the recording."""
+        """Setup the DB connections and the recording."""
 
-        self._job = None
-        self._chanid = 0
-        self._starttime = "0"
+        self._job: Job = None
+        self._chanid: int = 0
+        self._starttime: datetime
 
         self._db = MythDB()
 
@@ -45,30 +43,21 @@ class Recording:
 
         if opts.get("jobid"):
             self._jobid = opts.get("jobid")
-            logger.info(f"jobid:     {self._jobid}")
             self._job = Job(self._jobid)
             self._chanid = self._job.chanid
-
-            # Store the starttime as YYMMDDhhmmss - required by mythutil
-            self._starttime = self._job.starttime.astimezone(
-                tz=datetime.timezone.utc
-            ).strftime("%Y%m%d%H%M%S")
-
-            # When running in the context of a job Recorded requires datetime
-            self._rec = Recorded((self._chanid, self._job.starttime), db=self._db)
-
+            self._starttime = self._job.starttime
         elif opts.get("chanid") and opts.get("starttime"):
-            self._chanid = opts.get("chanid")
-            self._starttime = opts.get("starttime")
-
-            # When running outside of the context of a job Recorded allows
-            # a strings in UTC of YYMMDDhhmmss
-            self._rec = Recorded((self._chanid, self._starttime), db=self._db)
+            self._chanid = opts.get("chanid", 0)
+            self._starttime = datetime.strptime(
+                opts.get("starttime", ""), "%Y%m%d%H%M%S"
+            ).replace(tzinfo=timezone.utc)
         else:
             raise ValueError("jobid or starttime and chanid required")
 
-        logger.info(f"starttime: {self._starttime}")
-        logger.info(f"chanid:    {self._chanid}")
+        self._rec = Recorded((self._chanid, self._starttime), db=self._db)
+
+        logger.debug(f"starttime: {self._starttime}")
+        logger.debug(f"chanid:    {self._chanid}")
 
         if self._job:
             self._job.update(status=Job.STARTING)
@@ -78,7 +67,7 @@ class Recording:
 
         dirs = list(self._db.getStorageGroup(groupname=self._rec.storagegroup))
         dirname = Path(dirs[0].dirname)
-        self._filename = dirname / self._rec.basename
+        self._filename = str(dirname / self._rec.basename)
 
     # This could be done better with weakref finalizer objects
     def __del__(self):
@@ -132,7 +121,7 @@ class Recording:
     def get_skiplist(self) -> List[str]:
         """Get skiplist - depending on the callsign"""
 
-        if "QUEST" in self._callsign:
+        if "QUEST" in self._callsign or "BBC" in self._callsign:
             return []
         else:
             return self.call_comskip()
@@ -143,23 +132,20 @@ class Recording:
         if self._job:
             self._job.update(comment="Scanning", status=Job.RUNNING)
 
-        logger.info(f"filename:  {self._filename}")
-        logger.info(f"starttime: {self._starttime}")
-        logger.info(f"chanid:    {self._chanid}")
+        skiplist: List[str] = []
+        skiplist_re = re.compile(r"(\d+)\s+(\d+)")
 
-        with TemporaryDirectory() as tmp:
-            tmpdir = Path(tmp)
-
-            comskip_args = [
-                "comskip",
-                "--ini=/usr/local/bin/cpruk.ini",
-                f"--output={str(tmpdir)}",
-                "--output-filename=skiplist",
-                "--ts",
-                str(self._filename),
-            ]
-
-            comskip = self._run(comskip_args)
+        with TemporaryDirectory() as tmpdir:
+            comskip = self._run(
+                [
+                    "comskip",
+                    "--ini=/usr/local/bin/cpruk.ini",
+                    f"--output={tmpdir}",
+                    "--output-filename=skiplist",
+                    "--ts",
+                    self._filename,
+                ]
+            )
 
             if comskip.returncode > 1:
                 if self._job:
@@ -168,97 +154,25 @@ class Recording:
             elif comskip.returncode == 1:
                 return []
 
-            clre = re.compile(r"(\d+)\s+(\d+)")
-            skiplist = []
+            skiplist_file = Path(tmpdir) / "skiplist.txt"
 
-            with open(tmpdir / "skiplist.txt") as cl:
-                for line in cl.readlines():
-                    m = clre.match(line)
+            with skiplist_file.open() as f:
+                for line in f:
+                    m = skiplist_re.match(line)
                     if m:
                         skiplist.append(f"{m.group(1)}-{m.group(2)}")
-
-        return skiplist
-
-    def call_silence_detect(self) -> List[str]:
-        """Run ffmpeg and mp3splt to generate a skiplist for the recording."""
-
-        if self._job:
-            self._job.update(comment="Scanning", status=Job.RUNNING)
-
-        mp3lines = []
-
-        with TemporaryDirectory() as tmp:
-            tmpdir = Path(tmp)
-            audio_file = tmpdir / "sound.mp2"
-
-            # mp3splt insists on using cwd for the logfile
-            oldcwd = os.getcwd()
-            os.chdir(tmpdir)
-
-            ffmpeg = self._run(
-                [
-                    "ffmpeg",
-                    "-i",
-                    str(self._filename),
-                    "-acodec",
-                    "copy",
-                    str(audio_file),
-                ]
-            )
-
-            if ffmpeg.returncode != 0:
-                if self._job:
-                    self._job.update(comment="ffmpeg failed", status=Job.ERRORED)
-                raise Exception("ffmpeg failed")
-
-            mp3splt = self._run(
-                [
-                    "mp3splt",
-                    "-s",
-                    "-p",
-                    "th=-80,min=0.12",
-                    str(audio_file),
-                ]
-            )
-
-            if mp3splt.returncode != 0:
-                if self._job:
-                    self._job.update(comment="mp3splt failed", status=Job.ERRORED)
-                raise Exception("mp3splt failed")
-
-            with open(tmpdir / "mp3splt.log") as cl:
-                for line in cl.readlines():
-                    mp3lines.append(line.strip())
-
-            os.chdir(oldcwd)
-
-        clre = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)")
-        skiplist: List[int] = []
-        start: float = 0
-        finish: float = 0
-        filtered_mp3lines = [x for x in mp3lines if clre.match(x)]
-        sorted_mp3lines = sorted(
-            filtered_mp3lines, key=lambda val: float(val.split()[0])
-        )
-        for mp3line in sorted_mp3lines:
-            m = clre.match(mp3line)
-            duration = (float(m.group(1)), float(m.group(2)))
-
-            if duration[0] - start < 400:
-                finish = duration[1]
-            else:
-                skiplist.append(f"{int(start*25+1)}-{int(finish*25-25)}")
-                start, finish = duration
 
         return skiplist
 
     def set_skiplist(self, skiplist=List[str]):
         """Sets the skiplist for the recording, or clear if no breaks found."""
 
+        starttime = self._starttime.astimezone(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+
         skiplistargs = [
             "mythutil",
             f"--chanid={self._chanid}",
-            f"--starttime={self._starttime}",
+            f"--starttime={starttime}",
         ]
         if skiplist:
             skiplistargs += ["--setskiplist", ",".join(skiplist)]
@@ -322,12 +236,16 @@ def main():
         recording = Recording(chanid=args.chanid, starttime=args.starttime)
 
     logger.info(f"filename:  {recording.filename}")
-    logger.info(f"title:     {recording.rec.title}")
-    logger.info(f"subtitle:  {recording.rec.subtitle}")
+    logger.info(f"title:     {recording.title}")
+    logger.info(f"subtitle:  {recording.subtitle}")
     logger.info(f"callsign:  {recording.callsign}")
 
     skiplist = recording.get_skiplist()
     recording.set_skiplist(skiplist)
+    logger.info(f"filename:  {recording.filename}")
+    logger.info(f"title:     {recording.title}")
+    logger.info(f"subtitle:  {recording.subtitle}")
+    logger.info(f"callsign:  {recording.callsign}")
     logger.info(f"{len(skiplist)} break(s) found.")
 
 

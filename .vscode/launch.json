@@ -11,9 +11,9 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-//                "--starttime", "20241009160000",
-                "--jobid", "6479",
-//                "--chanid", "77986"
+                "--starttime", "20241015190000",
+//                "--jobid", "6557",
+                "--chanid", "77981"
             ],
             "justMyCode": false
         }
