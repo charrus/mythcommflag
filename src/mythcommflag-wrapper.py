@@ -126,6 +126,7 @@ class Recording:
 
     @property
     def filename(self) -> str:
+        """The full pathname to the recording"""
         return self._filename
 
     def get_skiplist(self) -> List[str]:
