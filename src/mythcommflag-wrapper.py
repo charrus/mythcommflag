@@ -91,7 +91,7 @@ class BaseRecording:
 
         # -1 is the default (to allow commercial detection)
         # -2 disables commercial detection
-        if self._channel.commethod < -1:
+        if self._channel.commmethod < -1:
             return []
         else:
             return self.call_comskip()
@@ -143,9 +143,9 @@ class BaseRecording:
             f"--starttime={starttime}",
         ]
         if skiplist:
-            skiplistargs += ["--setskiplist", ",".join(skiplist)]
+            skiplistargs.extend(["--setskiplist", ",".join(skiplist)])
         else:
-            skiplistargs += ["--clearskiplist"]
+            skiplistargs.append("--clearskiplist")
 
         mythutil = self._run(skiplistargs)
 
