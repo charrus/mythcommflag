@@ -38,17 +38,17 @@ class BaseRecording:
 
     def _get_recording(self):
         self._db = MythDB()
-        self._rec = Recorded((self._chanid, self._starttime), db=self._db)
+        self._recorded = Recorded((self._chanid, self._starttime), db=self._db)
 
         logger.debug(f"starttime: {self._starttime}")
         logger.debug(f"chanid:    {self._chanid}")
 
-        self._program = self._rec.getProgram()
+        self._program = self._recorded.getProgram()
         self._callsign = self._program.callsign
 
-        dirs = list(self._db.getStorageGroup(groupname=self._rec.storagegroup))
+        dirs = list(self._db.getStorageGroup(groupname=self._recorded.storagegroup))
         dirname = Path(dirs[0].dirname)
-        self._filename = dirname / self._rec.basename
+        self._filename = dirname / self._recorded.basename
         self._channel = Channel(self._chanid)
 
     # Method to run arbitary commands, log the command and the output
@@ -74,12 +74,12 @@ class BaseRecording:
     @property
     def title(self) -> str:
         """The title of the recording"""
-        return self._rec.title
+        return self._recorded.title
 
     @property
     def subtitle(self) -> str:
         """The subtitle of the recording"""
-        return self._rec.subtitle
+        return self._recorded.subtitle
 
     @property
     def filename(self) -> str:
@@ -152,7 +152,7 @@ class BaseRecording:
         if mythutil.returncode != 0:
             raise Exception("mythutil failed")
 
-        self._rec.update(commflagged=True)
+        self._recorded.update(commflagged=True)
 
 
 class RecordingJob(BaseRecording):
