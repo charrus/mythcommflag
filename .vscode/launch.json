@@ -8,11 +8,11 @@
             "name": "Mythcommflag",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "src/mythcommflag-wrapper.py",
             "console": "integratedTerminal",
             "args": [
                 "--starttime", "20241015190000",
-//                "--jobid", "6557",
+//                "--jobid", "6573",
                 "--chanid", "77981"
             ],
             "justMyCode": false
