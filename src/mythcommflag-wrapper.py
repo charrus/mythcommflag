@@ -32,6 +32,8 @@ class BaseRecording:
     def __init__(self):
         """Base class for recordings"""
 
+        self._chanid: int
+        self._starttime: datetime
         self._filename: Path = Path("")
 
     def _get_recording(self):
