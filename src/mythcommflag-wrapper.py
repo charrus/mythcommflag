@@ -21,7 +21,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Union
 
-from MythTV import Job, MythDB, Recorded  # type: ignore
+from MythTV import Job, MythDB, Recorded, Channel  # type: ignore
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
@@ -49,6 +49,7 @@ class BaseRecording:
         dirs = list(self._db.getStorageGroup(groupname=self._rec.storagegroup))
         dirname = Path(dirs[0].dirname)
         self._filename = dirname / self._rec.basename
+        self._channel = Channel(self._chanid)
 
     # Method to run arbitary commands, log the command and the output
     def _run(self, args: List[str]):
@@ -88,7 +89,9 @@ class BaseRecording:
     def get_skiplist(self) -> List[str]:
         """Get skiplist - depending on the callsign"""
 
-        if "QUEST" in self._callsign or "BBC" in self._callsign:
+        # -1 is the default (to allow commercial detection)
+        # -2 disables commercial detection
+        if self._channel.commethod < -1:
             return []
         else:
             return self.call_comskip()
