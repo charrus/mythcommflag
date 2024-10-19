@@ -139,7 +139,7 @@ class Recording:
             comskip = self._run(
                 [
                     "comskip",
-                    "--ini=/usr/local/bin/cpruk.ini",
+                    "--ini=/usr/local/bin/comskip.ini",
                     f"--output={tmpdir}",
                     "--output-filename=skiplist",
                     "--ts",
