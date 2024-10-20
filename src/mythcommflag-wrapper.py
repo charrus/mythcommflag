@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 import logging
 import re
 import subprocess
+from enum import Enum
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Union
@@ -25,7 +26,15 @@ from MythTV import Job, MythDB, Recorded, Channel  # type: ignore
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
+
 logger = logging.getLogger(__title__)
+
+
+# From: https://github.com/MythTV/mythtv/blob/master/mythtv/libs/libmythbase/programtypes.h#L128
+class Commercials(Enum):
+    COMM_DETECT_COMMFREE = -2
+    COMM_DETECT_UNINIT = -1
+    COMM_DETECT_OFF = 0x00000000
 
 
 class BaseRecording:
@@ -87,11 +96,12 @@ class BaseRecording:
         return str(self._filename)
 
     def get_skiplist(self) -> List[str]:
-        """Get skiplist - depending on the callsign"""
+        """Get skiplist - skip if channel has commercial detection off or commercial free."""
 
-        # -1 is the default (to allow commercial detection)
-        # -2 disables commercial detection
-        if self._channel.commmethod < -1:
+        if self._channel.commmethod in [
+            Commercials.COMM_DETECT_COMMFREE,
+            Commercials.COMM_DETECT_OFF,
+        ]:
             return []
         else:
             return self.call_comskip()
