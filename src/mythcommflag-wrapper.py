@@ -112,7 +112,6 @@ class BaseRecording:
         """Run comskip to generate a skiplist for the recording."""
 
         skiplist: List[str] = []
-        skiplist_re = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+\d")
 
         with TemporaryDirectory() as tmpdir:
             comskip_cmd = [
@@ -146,6 +145,8 @@ class BaseRecording:
             # 718.00  969.80  3
             # 1640.04 1891.80 3
             # 2546.64 2798.80 3
+
+            skiplist_re = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+\d")
 
             with edl_file.open() as f:
                 for line in f:
