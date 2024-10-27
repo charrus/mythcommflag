@@ -152,7 +152,7 @@ class BaseRecording:
                     if m:
                         # Frame number = (time * fps) + 1
                         start = int(float(m.group(1)) * self._fps) + 1
-                        end = int(float(m.group(2)) * self._fps + 1)
+                        end = int(float(m.group(2)) * self._fps) + 1
                         skiplist.append(f"{start}-{end}")
 
         return skiplist
