@@ -53,12 +53,14 @@ class BaseRecording:
         logger.debug(f"chanid:    {self._chanid}")
 
         self._program = self._recorded.getProgram()
-        self._callsign = self._program.callsign
+        self._recordedfile = self._recorded.getRecordedFile()
+        self._channel = Channel(self._chanid)
 
         dirs = list(self._db.getStorageGroup(groupname=self._recorded.storagegroup))
         dirname = Path(dirs[0].dirname)
         self._filename = dirname / self._recorded.basename
-        self._channel = Channel(self._chanid)
+        self._callsign = self._program.callsign
+        self._fps = self._recordedfile.fps
 
     # Method to run arbitary commands, log the command and the output
     def _run(self, args: List[str]):
@@ -110,14 +112,13 @@ class BaseRecording:
         """Run comskip to generate a skiplist for the recording."""
 
         skiplist: List[str] = []
-        skiplist_re = re.compile(r"(\d+)\s+(\d+)")
+        skiplist_re = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+\d")
 
         with TemporaryDirectory() as tmpdir:
             comskip_cmd = [
                 "comskip",
                 "--ini=/usr/local/bin/comskip.ini",
                 f"--output={tmpdir}",
-                "--output-filename=skiplist",
             ]
 
             if self._filename.suffix == ".ts":
@@ -132,13 +133,26 @@ class BaseRecording:
             elif comskip.returncode == 1:
                 return []
 
-            skiplist_file = Path(tmpdir) / "skiplist.txt"
+            edl_file = Path(tmpdir) / f"{self._filename.stem}.edl"
 
-            with skiplist_file.open() as f:
+            # EDL format:
+            # start   end     type
+            # start: seconds
+            # end: seconds
+            # type: 0 = Cut, 1 = Mute, 2 = Scene, 3 = Commercials
+            #
+            # 0.00    54.80   3
+            # 718.00  969.80  3
+            # 1640.04 1891.80 3
+            # 2546.64 2798.80 3
+
+            with edl_file.open() as f:
                 for line in f:
                     m = skiplist_re.match(line)
                     if m:
-                        skiplist.append(f"{m.group(1)}-{m.group(2)}")
+                        start = int(float(m.group(1)) * self._fps) + 1
+                        end = int(float(m.group(2)) * self._fps + 1)
+                        skiplist.append(f"{start}-{end}")
 
         return skiplist
 
