@@ -133,7 +133,8 @@ class BaseRecording:
             elif comskip.returncode == 1:
                 return []
 
-            edl_file = Path(tmpdir) / f"{self._filename.stem}.edl"
+            # self._filename.name is the basename
+            edl_file = Path(tmpdir) / Path(self._filename.name).with_suffix(".edl")
 
             # EDL format:
             # start   end     type
