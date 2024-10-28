@@ -79,7 +79,7 @@ convention = "google"
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
-split-on-trailing-commas = false
+split-on-trailing-comma = false
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
