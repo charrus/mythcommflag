@@ -101,8 +101,8 @@ class BaseRecording:
         """Get skiplist - skip if channel has commercial detection off or commercial free."""
 
         if self._channel.commmethod in [
-            Commercials.COMM_DETECT_COMMFREE,
-            Commercials.COMM_DETECT_OFF,
+            Commercials.COMM_DETECT_COMMFREE.value,
+            Commercials.COMM_DETECT_OFF.value,
         ]:
             return []
         else:

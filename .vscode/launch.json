@@ -11,9 +11,9 @@
             "program": "src/mythcommflag-wrapper.py",
             "console": "integratedTerminal",
             "args": [
-                "--starttime", "20241015190000",
+                "--starttime", "20241029200000",
 //                "--jobid", "6573",
-                "--chanid", "77981"
+                "--chanid", "77986"
             ],
             "justMyCode": false
         }
