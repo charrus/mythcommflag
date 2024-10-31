@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Wrapper around Comskip for MythTV"
 authors = ["Charlie Rusbridger <charlie@rusbridger.com>"]
 readme = "README.md"
+repository = "https://github.com/charrus/mythcommflag"
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -13,38 +14,11 @@ python = "^3.12"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[project.urls]
-Documentation = "https://github.com/charrus/mythcommflagwrapper#readme"
-Issues = "https://github.com/charrus/mythcommflagwrapper/issues"
-Source = "https://github.com/charrus/mythcommflagwrapper"
-
 [tool.poetry.scripts]
-my-script = "mythcommflag:main"
+mythcommflagwrapper = 'mythcommflagwrapper.console:run'
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^.6.0.0"
-
-[tool.coverage.run]
-source_pkgs = ["mythcommflagwrapper", "tests"]
-branch = true
-parallel = true
-omit = [
-  "src/mythcommflagwrapper/__about__.py",
-]
-
-[tool.coverage.paths]
-mythcommflagwrapper = ["src/mythcommflagwrapper", "*/mythcommflagwrapper/src/mythcommflagwrapper"]
-tests = ["tests", "*/mythcommflagwrapper/tests"]
-
-[tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
-]
-
-[project.script]
-mythcommflagwrapper = "mythcommflagwrapper"
+mypy = "^6.0.0"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -76,7 +50,7 @@ exclude = [
     "site-packages",
     "venv",
 ]
-target-version = "py38"
+target-version = "py312"
 line-length = 79
 
 [tool.ruff.lint]
@@ -132,12 +106,3 @@ docstring-code-line-length = "dynamic"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-
-[tool.tox]
-requires = ["tox>=4"]
-env_list = ["3.12", "type"]
-
-[tool.tox.env.type]
-description = "run type check on code base"
-deps = ["mypy==1.11.2", "types-cachetools>=5.5.0.20240820", "types-chardet>=5.0.4.6"]
-commands = [["mypy", "src"]]

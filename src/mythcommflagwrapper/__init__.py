@@ -11,28 +11,33 @@
 # alterntative to the built in advert detection.
 # ---------------------------
 
-from datetime import datetime, timezone
+"""Classes for running comskip."""
+
 import re
 import subprocess
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List
 
-from MythTV import Job, MythDB, Recorded, Channel  # type: ignore
+from MythTV import Channel, Job, MythDB, Recorded  # type: ignore
 
 
 # From: https://github.com/MythTV/mythtv/blob/master/mythtv/libs/libmythbase/programtypes.h#L128
 class Commercials(Enum):
+    """Enum for commercial detection method."""
+
     COMM_DETECT_COMMFREE = -2
     COMM_DETECT_UNINIT = -1
     COMM_DETECT_OFF = 0x00000000
 
 
 class BaseRecording:
-    def __init__(self):
-        """Base class for recordings"""
+    """Base class for recordings."""
 
+    def __init__(self):
+        """Base class for recordings."""
         self._chanid: int
         self._starttime: datetime
         self._filename: Path = Path("")
@@ -45,7 +50,9 @@ class BaseRecording:
         self._recordedfile = self._recorded.getRecordedFile()
         self._channel = Channel(self._chanid)
 
-        dirs = list(self._db.getStorageGroup(groupname=self._recorded.storagegroup))
+        dirs = list(
+            self._db.getStorageGroup(groupname=self._recorded.storagegroup)
+        )
         dirname = Path(dirs[0].dirname)
         self._filename = dirname / self._recorded.basename
         self._callsign = self._program.callsign
@@ -63,27 +70,29 @@ class BaseRecording:
 
     @property
     def callsign(self) -> str:
-        """The callsign of the recording, for example ITV2"""
+        """The callsign of the recording, for example ITV2."""
         return self._callsign
 
     @property
     def title(self) -> str:
-        """The title of the recording"""
+        """The title of the recording."""
         return self._recorded.title
 
     @property
     def subtitle(self) -> str:
-        """The subtitle of the recording"""
+        """The subtitle of the recording."""
         return self._recorded.subtitle
 
     @property
     def filename(self) -> str:
-        """The full pathname to the recording"""
+        """The full pathname to the recording."""
         return str(self._filename)
 
     def get_skiplist(self) -> List[str]:
-        """Get skiplist - skip if channel has commercial detection off or commercial free."""
+        """Get skiplist.
 
+        Skip if channel has commercial detection off or commercial free.
+        """
         if self._channel.commmethod in [
             Commercials.COMM_DETECT_COMMFREE.value,
             Commercials.COMM_DETECT_OFF.value,
@@ -94,7 +103,6 @@ class BaseRecording:
 
     def call_comskip(self) -> List[str]:
         """Run comskip to generate a skiplist for the recording."""
-
         skiplist: List[str] = []
 
         with TemporaryDirectory() as tmpdir:
@@ -117,7 +125,9 @@ class BaseRecording:
                 return []
 
             # self._filename.name is the basename
-            edl_file = Path(tmpdir) / Path(self._filename.name).with_suffix(".edl")
+            edl_file = Path(tmpdir) / Path(self._filename.name).with_suffix(
+                ".edl"
+            )
 
             # EDL format:
             # start   end     type
@@ -145,8 +155,9 @@ class BaseRecording:
 
     def set_skiplist(self, skiplist=List[str]):
         """Sets the skiplist for the recording, or clear if no breaks found."""
-
-        starttime = self._starttime.astimezone(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
+        starttime = self._starttime.astimezone(tz=timezone.utc).strftime(
+            "%Y%m%d%H%M%S"
+        )
 
         skiplistargs = [
             "mythutil",
@@ -167,9 +178,13 @@ class BaseRecording:
 
 
 class RecordingJob(BaseRecording):
+    """RecordingJob.
+
+    Recording from a job.
+    """
+
     def __init__(self, jobid: str):
         """Recoding from a job."""
-
         super().__init__()
 
         self._jobid = jobid
@@ -182,6 +197,10 @@ class RecordingJob(BaseRecording):
         super()._get_recording()
 
     def get_skiplist(self) -> List[str]:
+        """Get skiplist.
+
+        Run comskip and get the skiplist from the generated EDL file.
+        """
         self._job.update(comment="Scanning", status=Job.RUNNING)
         try:
             skiplist = super().get_skiplist()
@@ -192,6 +211,10 @@ class RecordingJob(BaseRecording):
         return skiplist
 
     def set_skiplist(self, skiplist=List[str]):
+        """Set skiplist.
+
+        Add the skiplist to the recording.
+        """
         try:
             super().set_skiplist(skiplist)
         except Exception:
@@ -204,9 +227,13 @@ class RecordingJob(BaseRecording):
 
 
 class Recording(BaseRecording):
+    """Recording.
+
+    Recording with chanid and starttime in YYMMDDhhmmss format.
+    """
+
     def __init__(self, chanid: int, starttime: str):
         """Recording with chanid and starttime in YYMMDDhhmmss format."""
-
         super().__init__()
 
         self._chanid = chanid

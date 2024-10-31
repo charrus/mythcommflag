@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
-from mythcommflagwrapper import Recording, RecordingJob
+"""Wrapper around comskip for use by MythTV."""
+
 import argparse
 import logging
 from typing import Union
 
+from mythcommflagwrapper import Recording, RecordingJob
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
@@ -14,13 +16,19 @@ logger = logging.getLogger("mythcommflagwrapper")
 
 
 def main():
-    """Get arguments from the command line, grab the job information for the
-    recording and generate a skiplist for mythutil with comskip."""
+    """Mythcommflagwrapper.
 
-    parser = argparse.ArgumentParser(description="Wrapper around comflag for MythTV")
+    Get arguments from the command line, grab the job information for the
+    recording and generate a skiplist for mythutil with comskip.
+    """
+    parser = argparse.ArgumentParser(
+        description="Wrapper around comflag for MythTV"
+    )
 
     parser.add_argument("--jobid", type=str, required=False, help="The Job ID")
-    parser.add_argument("--chanid", type=str, required=False, help="The Channel id")
+    parser.add_argument(
+        "--chanid", type=str, required=False, help="The Channel id"
+    )
     parser.add_argument(
         "--starttime",
         type=str,
@@ -45,7 +53,9 @@ def main():
 
     if not args.jobid and not (args.starttime and args.chanid):
         logger.error("Expected either --jobid or --chanid and --starttime")
-        raise RuntimeError("Expected either --jobid or --chanid and --starttime")
+        raise RuntimeError(
+            "Expected either --jobid or --chanid and --starttime"
+        )
 
     logger.debug(f"Starting new run; options: {args}")
 
