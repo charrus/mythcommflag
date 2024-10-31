@@ -13,3 +13,25 @@ as the Commercial Detection Command on the "General Backend Settings -> Job Queu
 page in the MythTV Setup web (port 6544)
 
 This is very much work in progress.
+
+[![PyPI - Version](https://img.shields.io/pypi/v/mythcommflagwrapper.svg)](https://pypi.org/project/mythcommflagwrapper)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mythcommflagwrapper.svg)](https://pypi.org/project/mythcommflagwrapper)
+
+-----
+
+## Table of Contents
+
+- [Mythcommflagwrapper](#mythcommflagwrapper)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [License](#license)
+
+## Installation
+
+```console
+pip install mythcommflagwrapper
+```
+
+## License
+
+`mythcommflagwrapper` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.

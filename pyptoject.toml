@@ -1,25 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "mythcommflagwrapper"
-version = "0.0.1"
-description = "Wrapper around Comskip and mp3splt"
-authors = [
-    { name="Charlie Rusbridger"}
-]
-license = {file = "LICENSE"}
+dynamic = ["version"]
+description = 'Wrapper around Comskip for MythTV'
 readme = "README.md"
 requires-python = ">=3.8"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Charlie Rusbridger", email = "charlie@rusbridger.com" },
+]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = []
+
+[project.urls]
+Documentation = "https://github.com/charrus/mythcommflagwrapper#readme"
+Issues = "https://github.com/charrus/mythcommflagwrapper/issues"
+Source = "https://github.com/charrus/mythcommflagwrapper"
+
+[tool.hatch.version]
+path = "src/mythcommflagwrapper/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/mythcommflagwrapper tests}"
+
+[tool.coverage.run]
+source_pkgs = ["mythcommflagwrapper", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/mythcommflagwrapper/__about__.py",
+]
+
+[tool.coverage.paths]
+mythcommflagwrapper = ["src/mythcommflagwrapper", "*/mythcommflagwrapper/src/mythcommflagwrapper"]
+tests = ["tests", "*/mythcommflagwrapper/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
 ]
 
 [project.script]
 mythcommflagwrapper = "mythcommflagwrapper"
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -56,18 +98,13 @@ line-length = 79
 
 [tool.ruff.lint]
 extend-select = [
-'D', #pydocstyle
-'E', 'W', # pycodestyle
-'F', #pyflakes
-'I', # sort imports
-'UP', #pyupgrade
-"RUF",  # ruff dev's own rules
-"SIM", # pyflakes simplicity
-"C90", # more complexity rules
-# Add the `line-too-long` rule to the enforced rule set. By default, Ruff omits rules that
-# overlap with the use of a formatter, like Black, but we can override this behavior by
-# explicitly adding the rule.
-"E501",
+  'D',
+  'E',
+  'W',
+  'F',
+  'I001',
+  'E501',
+  'RUF',
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
