@@ -1,5 +1,7 @@
 .venv
 .ruff_cache
-dist/*
+.mypy_cache
+dist
 *.pyc
 poetry.lock
+**/__pycache__
