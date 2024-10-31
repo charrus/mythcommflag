@@ -5,6 +5,7 @@ description = "Wrapper around Comskip for MythTV"
 authors = ["Charlie Rusbridger <charlie@rusbridger.com>"]
 readme = "README.md"
 repository = "https://github.com/charrus/mythcommflag"
+packages = [{include = "mythcommflagwrapper", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -15,10 +16,10 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-mythcommflagwrapper = 'mythcommflagwrapper.console:run'
+mythcommflagwrapper = 'mythcommflagwrapper.mythcommflagwrapper:main'
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^6.0.0"
+mypy = "^1.9.0"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

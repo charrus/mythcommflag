@@ -1,3 +1,5 @@
 .venv
 .ruff_cache
 dist/*
+*.pyc
+poetry.lock
