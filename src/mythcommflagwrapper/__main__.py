@@ -8,12 +8,13 @@ import logging
 import re
 import subprocess
 from datetime import datetime, timezone
-from enum import Enum
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Union
 
 from MythTV import Channel, Job, MythDB, Recorded  # type: ignore
+
+from mythcommflagwrapper.const import COMM_DETECT_COMMFREE, COMM_DETECT_OFF
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
@@ -21,15 +22,6 @@ LOGFILE = "/var/log/mythtv/mythcommflag.log"
 logger = logging.getLogger("mythcommflagwrapper")
 
 """Classes for running comskip."""
-
-
-# From: https://github.com/MythTV/mythtv/blob/master/mythtv/libs/libmythbase/programtypes.h#L128
-class Commercials(Enum):
-    """Enum for commercial detection method."""
-
-    COMM_DETECT_COMMFREE = -2
-    COMM_DETECT_UNINIT = -1
-    COMM_DETECT_OFF = 0x00000000
 
 
 class BaseRecording:
@@ -93,8 +85,8 @@ class BaseRecording:
         Skip if channel has commercial detection off or commercial free.
         """
         if self._channel.commmethod in [
-            Commercials.COMM_DETECT_COMMFREE.value,
-            Commercials.COMM_DETECT_OFF.value,
+            COMM_DETECT_COMMFREE,
+            COMM_DETECT_OFF,
         ]:
             return []
         else:
