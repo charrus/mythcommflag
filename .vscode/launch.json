@@ -5,15 +5,41 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Debugger: Module",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "mythcommflagwrapper.__main__",
+            "args": [
+                //                "--starttime", "20241029200000",
+                "--jobid",
+                "6826",
+                //                "--chanid", "77986"
+            ],
+        },
+        {
+            "name": "Python Debugger: Current File with Arguments",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                //                "--starttime", "20241029200000",
+                "--jobid",
+                "6826",
+                //                "--chanid", "77986"
+            ],
+        },
+        {
             "name": "Mythcommflag",
             "type": "debugpy",
             "request": "launch",
             "program": "src/mythcommflag-wrapper.py",
             "console": "integratedTerminal",
             "args": [
-                "--starttime", "20241029200000",
-//                "--jobid", "6573",
-                "--chanid", "77986"
+                //                "--starttime", "20241029200000",
+                "--jobid",
+                "6826",
+                //                "--chanid", "77986"
             ],
             "justMyCode": false
         }

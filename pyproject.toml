@@ -100,3 +100,4 @@ docstring-code-line-length = "dynamic"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+disallow_any_expr = true
