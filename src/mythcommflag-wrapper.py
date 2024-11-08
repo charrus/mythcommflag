@@ -17,24 +17,20 @@ from datetime import datetime, timezone
 import logging
 import re
 import subprocess
-from enum import Enum
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Union
 
-from MythTV import Job, MythDB, Recorded, Channel  # type: ignore
+from MythTV import Job, MythDB, Recorded, Channel, exceptions  # type: ignore
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
+# From: https://github.com/MythTV/mythtv/blob/master/mythtv/libs/libmythbase/programtypes.h#L128
+COMM_DETECT_COMMFREE = -2
+COMM_DETECT_UNINIT = -1
+COMM_DETECT_OFF = 0x00000000
 
 logger = logging.getLogger(__title__)
-
-
-# From: https://github.com/MythTV/mythtv/blob/master/mythtv/libs/libmythbase/programtypes.h#L128
-class Commercials(Enum):
-    COMM_DETECT_COMMFREE = -2
-    COMM_DETECT_UNINIT = -1
-    COMM_DETECT_OFF = 0x00000000
 
 
 class BaseRecording:
@@ -54,13 +50,19 @@ class BaseRecording:
 
         self._program = self._recorded.getProgram()
         self._recordedfile = self._recorded.getRecordedFile()
-        self._channel = Channel(self._chanid)
 
+        # Old recordings may not have the original channel
+        try:
+            self._channel = Channel(self._chanid)
+        except exceptions.MythError:
+            self._commmethod = COMM_DETECT_UNINIT
+        else:
+            self._commmethod = self._channel.commmethod
+
+        self._callsign = self._program.callsign
         dirs = list(self._db.getStorageGroup(groupname=self._recorded.storagegroup))
         dirname = Path(dirs[0].dirname)
         self._filename = dirname / self._recorded.basename
-        self._callsign = self._program.callsign
-        self._fps = self._recordedfile.fps
 
     # Method to run arbitary commands, log the command and the output
     def _run(self, args: List[str]):
@@ -100,9 +102,9 @@ class BaseRecording:
     def get_skiplist(self) -> List[str]:
         """Get skiplist - skip if channel has commercial detection off or commercial free."""
 
-        if self._channel.commmethod in [
-            Commercials.COMM_DETECT_COMMFREE.value,
-            Commercials.COMM_DETECT_OFF.value,
+        if self._commmethod in [
+            COMM_DETECT_COMMFREE,
+            COMM_DETECT_OFF,
         ]:
             return []
         else:
@@ -127,10 +129,16 @@ class BaseRecording:
 
             comskip = self._run(comskip_cmd)
 
-            if comskip.returncode > 1:
-                raise Exception("comskip failed")
-            elif comskip.returncode == 1:
+            if comskip.returncode == 1:
                 return []
+            elif comskip.returncode != 0:
+                logger.error(comskip.stdout)
+                raise Exception("comskip failed")
+
+            fps_re = re.compile(r"(?s).*Frame Rate set to ([^ ]+) f/s.*")
+            m = fps_re.match(comskip.stdout)
+            self._fps = float(m.group(1))
+            logger.info(f"fps:       {self._fps}")
 
             # self._filename.name is the basename
             edl_file = Path(tmpdir) / Path(self._filename.name).with_suffix(".edl")
@@ -202,14 +210,14 @@ class RecordingJob(BaseRecording):
         """This is to ensure that the job is marked as finished so that the
         job queue isn't blocked on this phantom job thats finished."""
 
-        if self._job and self._job.status not in (
-            Job.STARTING,
-            Job.RUNNING,
+        if self._job and self._job.status not in [
             Job.ERRORED,
             Job.FINISHED,
-        ):
-            self._job.update(comment="Destructor called", status=Job.FINISHED)
-            logger.error("Destructor called with unexpected status")
+        ]:
+            self._job.update(comment="Destructor called", status=Job.ERRORED)
+            logger.error(
+                f"Destructor called with unexpected status: {self._job.status}"
+            )
 
     def get_skiplist(self) -> List[str]:
         self._job.update(comment="Scanning", status=Job.RUNNING)
@@ -285,8 +293,11 @@ def main():
 
     recording: Union[RecordingJob, Recording]
     if args.jobid:
+        logger.info(f"jobid:  {args.jobid}")
         recording = RecordingJob(args.jobid)
     else:
+        logger.info(f"chanid:  {args.chanid}")
+        logger.info(f"starttime:  {args.starttime}")
         recording = Recording(args.chanid, args.starttime)
 
     logger.info(f"filename:  {recording.filename}")
