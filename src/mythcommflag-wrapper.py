@@ -159,8 +159,7 @@ class BaseRecording:
 
             with edl_file.open() as edl_lines:
                 for line in edl_lines:
-                    m = skiplist_re.match(line)
-                    if m:
+                    if m := skiplist_re.match(line):
                         # Frame number = (time * fps) + 1
                         start = int(float(m.group(1)) * self._fps) + 1
                         end = int(float(m.group(2)) * self._fps) + 1
