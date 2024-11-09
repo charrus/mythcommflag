@@ -12,9 +12,13 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Union
 
-from MythTV import Channel, Job, MythDB, Recorded  # type: ignore
+from MythTV import Channel, Job, MythDB, Recorded, exceptions  # type: ignore
 
-from mythcommflagwrapper.const import COMM_DETECT_COMMFREE, COMM_DETECT_OFF
+from mythcommflagwrapper.const import (
+    COMM_DETECT_COMMFREE,
+    COMM_DETECT_OFF,
+    COMM_DETECT_UNINIT,
+)
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
@@ -39,7 +43,13 @@ class BaseRecording:
 
         self._program = self._recorded.getProgram()
         self._recordedfile = self._recorded.getRecordedFile()
-        self._channel = Channel(self._chanid)
+        # Old recordings may not have the original channel
+        try:
+            self._channel = Channel(self._chanid)
+        except exceptions.MythError:
+            self._commmethod = COMM_DETECT_UNINIT
+        else:
+            self._commmethod = self._channel.commmethod
 
         dirs = list(
             self._db.getStorageGroup(groupname=self._recorded.storagegroup)
@@ -47,15 +57,19 @@ class BaseRecording:
         dirname = Path(dirs[0].dirname)
         self._filename = dirname / self._recorded.basename
         self._callsign = self._program.callsign
-        self._fps = self._recordedfile.fps
 
     # Method to run arbitary commands, log the command and the output
     def _run(self, args: List[str]):
+        logger.info(f"Running: {' '.join(args)}")
+
         proc = subprocess.run(
             args,
             capture_output=True,
             encoding="utf-8",
         )
+
+        for line in proc.stdout.splitlines():
+            logger.info(line)
 
         return proc
 
@@ -84,7 +98,7 @@ class BaseRecording:
 
         Skip if channel has commercial detection off or commercial free.
         """
-        if self._channel.commmethod in [
+        if self._commmethod in [
             COMM_DETECT_COMMFREE,
             COMM_DETECT_OFF,
         ]:
@@ -110,10 +124,17 @@ class BaseRecording:
 
             comskip = self._run(comskip_cmd)
 
-            if comskip.returncode > 1:
-                raise Exception("comskip failed")
-            elif comskip.returncode == 1:
+            # Successful run, but no breaks detected
+            if comskip.returncode == 1:
                 return []
+            elif comskip.returncode != 0:
+                logger.error(f"comskip failed: {comskip.stderr}")
+                raise Exception("comskip failed")
+
+            fps_re = re.compile(r"(?s).*Frame Rate set to ([^ ]+) f/s.*")
+            m = fps_re.match(comskip.stdout)
+            self._fps = float(m.group(1))
+            logger.info(f"fps:       {self._fps}")
 
             # self._filename.name is the basename
             edl_file = Path(tmpdir) / Path(self._filename.name).with_suffix(
@@ -133,10 +154,9 @@ class BaseRecording:
 
             skiplist_re = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+\d")
 
-            with edl_file.open() as f:
-                for line in f:
-                    m = skiplist_re.match(line)
-                    if m:
+            with edl_file.open() as edl_lines:
+                for line in edl_lines:
+                    if m := skiplist_re.match(line):
                         # Frame number = (time * fps) + 1
                         start = int(float(m.group(1)) * self._fps) + 1
                         end = int(float(m.group(2)) * self._fps) + 1
@@ -163,6 +183,7 @@ class BaseRecording:
         mythutil = self._run(skiplistargs)
 
         if mythutil.returncode != 0:
+            logger.error(f"mythutil failed: {mythutil.stderr}")
             raise Exception("mythutil failed")
 
         self._recorded.update(commflagged=True)
@@ -186,6 +207,22 @@ class RecordingJob(BaseRecording):
         self._job.update(status=Job.STARTING)
 
         super()._get_recording()
+
+    # This could be done better with weakref finalizer objects
+    def __del__(self):
+        """Destructor.
+
+        This is to ensure that the job is marked as finished so that the
+        job queue isn't blocked on this phantom job thats finished.
+        """
+        if self._job and self._job.status not in [
+            Job.ERRORED,
+            Job.FINISHED,
+        ]:
+            self._job.update(comment="Destructor called", status=Job.ERRORED)
+            logger.error(
+                f"Destructor called with unexpected status: {self._job.status}"
+            )
 
     def get_skiplist(self) -> List[str]:
         """Get skiplist.
@@ -281,8 +318,11 @@ def main():
 
     recording: Union[RecordingJob, Recording]
     if args.jobid:
+        logger.info(f"jobid:  {args.jobid}")
         recording = RecordingJob(args.jobid)
     else:
+        logger.info(f"chanid:  {args.chanid}")
+        logger.info(f"starttime:  {args.starttime}")
         recording = Recording(args.chanid, args.starttime)
 
     logger.info(f"filename:  {recording.filename}")
