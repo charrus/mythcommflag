@@ -129,10 +129,11 @@ class BaseRecording:
 
             comskip = self._run(comskip_cmd)
 
+            # Successful run, but no breaks detected
             if comskip.returncode == 1:
                 return []
             elif comskip.returncode != 0:
-                logger.error(comskip.stdout)
+                logger.error(f"comskip failed: {comskip.stderr}")
                 raise Exception("comskip failed")
 
             fps_re = re.compile(r"(?s).*Frame Rate set to ([^ ]+) f/s.*")
@@ -156,8 +157,8 @@ class BaseRecording:
 
             skiplist_re = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+\d")
 
-            with edl_file.open() as f:
-                for line in f:
+            with edl_file.open() as edl_lines:
+                for line in edl_lines:
                     m = skiplist_re.match(line)
                     if m:
                         # Frame number = (time * fps) + 1
@@ -185,6 +186,7 @@ class BaseRecording:
         mythutil = self._run(skiplistargs)
 
         if mythutil.returncode != 0:
+            logger.error(f"mythutil failed: {mythutil.stderr}")
             raise Exception("mythutil failed")
 
         self._recorded.update(commflagged=True)
