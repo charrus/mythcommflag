@@ -14,11 +14,7 @@ from typing import List, Union
 
 from MythTV import Channel, Job, MythDB, Recorded, exceptions  # type: ignore
 
-from mythcommflagwrapper.const import (
-    COMM_DETECT_COMMFREE,
-    COMM_DETECT_OFF,
-    COMM_DETECT_UNINIT,
-)
+from .const import COMM_DETECT_COMMFREE, COMM_DETECT_OFF, COMM_DETECT_UNINIT
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
