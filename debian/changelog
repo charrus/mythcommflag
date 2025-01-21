@@ -1,3 +1,9 @@
+mythcommflagwrapper (0.1.0-1ubuntu3) noble; urgency=medium
+
+  * Convert main function to standalone script
+
+ -- Charlie Rusbridger <charlie@rusbridger.com>  Tue, 21 Jan 2025 13:57:46 +0000
+
 mythcommflagwrapper (0.1.0-1ubuntu2) noble; urgency=medium
 
   * Increment version

@@ -10,11 +10,9 @@ setup(
     install_requires=[
         "MythTV",
     ],
-    entry_points={
-        "console_scripts": [
-            "mythcommflag-wrapper=mythcommflagwrapper.__main__:main",
-        ],
-    },
+    scripts=[
+        'src/mythcommflagwrapper/scripts/mythcommflag-wrapper',
+    ],
     data_files=[
         ('etc/mythcommflagwrapper', ['comskip.ini']),
     ],

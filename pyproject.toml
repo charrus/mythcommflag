@@ -1,28 +1,33 @@
 [tool.poetry]
 name = "mythcommflagwrapper"
 version = "0.1.0"
-description = "Wrapper around Comskip for MythTV"
+description = "Wrapper around comskip for use by MythTV"
 authors = ["Charlie Rusbridger <charlie@rusbridger.com>"]
+license = "MIT"
 readme = "README.md"
 repository = "https://github.com/charrus/mythcommflag"
-packages = [{include = "mythcommflagwrapper", from = "src"}]
+packages = [
+    { include = "mythcommflagwrapper", from = "src" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-# MythTV = { git = "git@github.com:MythTV/mythtv.git", subdirectory = "bindings/python", tag="v34.0"}
-
+MythTV = "*"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-mythcommflagwrapper = 'mythcommflagwrapper.__main__:main'
+mythcommflag-wrapper = "mythcommflagwrapper.scripts.mythcommflag-wrapper:main"
+
+[tool.poetry.data-files]
+"etc/mythcommflagwrapper" = ["comskip.ini"]
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.9.0"
 pytest = "^8.0.0"
-pytest-cov = "^4.1.0"
+ruff = "^0.1.14"
+mypy = "^1.8.0"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -46,8 +51,8 @@ exclude = [
     "site-packages",
     "venv",
 ]
+line-length = 88
 target-version = "py312"
-line-length = 79
 
 [tool.ruff.lint]
 extend-select = [
@@ -58,6 +63,14 @@ extend-select = [
   'I001',
   'E501',
   'RUF',
+]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
 ]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
@@ -99,6 +112,7 @@ docstring-code-format = false
 docstring-code-line-length = "dynamic"
 
 [tool.mypy]
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
