@@ -109,7 +109,7 @@ class BaseRecording:
         with TemporaryDirectory() as tmpdir:
             comskip_cmd = [
                 "comskip",
-                "--ini=/usr/local/bin/comskip.ini",
+                "--ini=/etc/mythcommflagwrapper/comskip.ini",
                 f"--output={tmpdir}",
             ]
 

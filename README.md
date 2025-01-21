@@ -5,13 +5,6 @@ packaging best practices.
 
 The aim of this project is to offer a easy way to use [Comskip](https://github.com/erikkaashoek/Comskip). This needs to be built and installed first.
 
-Just copy the comskip.ini and src/mythcommflag.py to /usr/local/bin and use:
-
-`/usr/local/bin/mythcommflag-wrapper.py --jobid "%JOBID%"`
-
-as the Commercial Detection Command on the "General Backend Settings -> Job Queue (Global)"
-page in the MythTV Setup web (port 6544)
-
 This is very much work in progress.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/mythcommflagwrapper.svg)](https://pypi.org/project/mythcommflagwrapper)
@@ -28,9 +21,26 @@ This is very much work in progress.
 
 ## Installation
 
+### Python
+
 ```console
 pip install mythcommflagwrapper
 ```
+
+### Ubuntu
+
+```
+debuild -i -b -us -uc
+apt install ./python3-mythcommflagwrapper_0.1.1-1ubuntu4_amd64.deb
+
+## Usage
+
+Use:
+
+`/usr/bin/mythcommflag-wrapper --jobid "%JOBID%"`
+
+as the Commercial Detection Command on the "General Backend Settings -> Job Queue (Global)"
+page in the MythTV Setup web (port 6544)
 
 ## License
 
