@@ -1,3 +1,0 @@
-python3:Depends=libmyth-python, python3:any
-misc:Depends=
-misc:Pre-Depends=

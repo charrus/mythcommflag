@@ -1,3 +1,15 @@
+mythcommflagwrapper (0.1.0-1ubuntu2) noble; urgency=medium
+
+  * Increment version
+
+ -- Charlie Rusbridger <charlie@rusbridger.com>  Tue, 21 Jan 2025 13:43:05 +0000
+
+mythcommflagwrapper (0.1.0-1ubuntu1) noble; urgency=medium
+
+  * Fix final packaging issues
+
+ -- Charlie Rusbridger <charlie@rusbridger.com>  Tue, 21 Jan 2025 13:40:06 +0000
+
 mythcommflagwrapper (0.1.0-1) noble; urgency=medium
 
   * Initial release.
