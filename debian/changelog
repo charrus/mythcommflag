@@ -1,0 +1,6 @@
+mythcommflagwrapper (0.1.0-1) noble; urgency=medium
+
+  * Initial release.
+  * Wrapper around Comskip for MythTV commercial detection.
+
+ -- Charlie Rusbridger <charlie@rusbridger.com>  Tue, 21 Jan 2025 08:54:43 +0000
