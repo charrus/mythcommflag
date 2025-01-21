@@ -2,7 +2,7 @@
 
 export PYBUILD_NAME=mythcommflagwrapper
 export DH_VERBOSE=1
-export PYBUILD_SYSTEM=pyproject
+export PYBUILD_SYSTEM=distutils
 
 %:
 	dh $@ --with python3 --buildsystem=pybuild

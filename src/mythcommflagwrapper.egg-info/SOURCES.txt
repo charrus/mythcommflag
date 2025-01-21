@@ -1,0 +1,15 @@
+LICENSE.txt
+README.md
+comskip.ini
+pyproject.toml
+setup.py
+src/mythcommflagwrapper/__init__.py
+src/mythcommflagwrapper/__main__.py
+src/mythcommflagwrapper/const.py
+src/mythcommflagwrapper.egg-info/PKG-INFO
+src/mythcommflagwrapper.egg-info/SOURCES.txt
+src/mythcommflagwrapper.egg-info/dependency_links.txt
+src/mythcommflagwrapper.egg-info/entry_points.txt
+src/mythcommflagwrapper.egg-info/requires.txt
+src/mythcommflagwrapper.egg-info/top_level.txt
+tests/test_main.py

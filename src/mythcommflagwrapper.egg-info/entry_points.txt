@@ -1,0 +1,2 @@
+[console_scripts]
+mythcommflag-wrapper = mythcommflagwrapper.__main__:main

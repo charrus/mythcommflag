@@ -6,18 +6,14 @@ Standards-Version: 4.6.2
 Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3-all,
-               python3-setuptools,
-               python3-poetry-core,
-               pybuild-plugin-pyproject,
-               python3-build,
-               python3-installer,
-               python3-wheel
+               python3-setuptools
 
 Package: python3-mythcommflagwrapper
 Architecture: all
 Depends: ${python3:Depends},
          ${misc:Depends},
-         mythtv-backend
+         mythtv-backend,
+         libmyth-python
 Description: MythTV commercial detection wrapper using Comskip
  A wrapper around Comskip for use by MythTV's commercial detection system.
  This package provides a Python interface and CLI tool to use Comskip
