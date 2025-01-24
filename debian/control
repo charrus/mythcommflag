@@ -6,7 +6,8 @@ Standards-Version: 4.6.2
 Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3-all,
-               python3-setuptools
+               pybuild-plugin-pyproject,
+               python3-poetry-core
 
 Package: python3-mythcommflagwrapper
 Architecture: all
