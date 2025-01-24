@@ -35,7 +35,7 @@ poetry build
 #### Simple
 
 ```
-debuild -i -b -us -uc
+debuild -g
 apt install ./python3-mythcommflagwrapper_0.1.1-1ubuntu4_amd64.deb
 ```
 
@@ -44,11 +44,10 @@ apt install ./python3-mythcommflagwrapper_0.1.1-1ubuntu4_amd64.deb
 Or if you have `pdebuild` and `pbuilder` setup, your gpg keys as well as `dput`, `mini-dinstall` and `/etc/apt/sources.list.d/mythcommflagwrapper.list` pointing somewhere locally, it's a breeze:
 
 ```
-pdebuild -i -b
+pdebuild
 dput ../python3-mythcommflagwrapper*changes
-mini-dinstall -b
-apt update
-apt install -y python3-mythcommflagwrapper
+sudo apt update
+sudo apt install -y python3-mythcommflagwrapper
 ```
 
 Information seems to be rather scattered with best practices - so here are some pointers:

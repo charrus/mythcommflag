@@ -2,16 +2,12 @@
 
 export PYBUILD_NAME=mythcommflagwrapper
 export DH_VERBOSE=1
-export PYBUILD_SYSTEM=custom
-export PYBUILD_CLEAN_ARGS=rm -rf {build_dir}/python{version}/
-#export PYBUILD_CONFIGURE_ARGS=./configure --python={version}
-export PYBUILD_BUILD_ARGS=poetry build --dir={build_dir} --python={version}
-export PYBUILD_INSTALL_ARGS=poetry install --no-interaction --dir={destdir} --python={version} --install-dir={install_dir}
-export PYBUILD_TEST_ARGS_python3=cd {build_dir}; python{version} -m discover
+export BUILD_SYSTEM=pyproject
 
 %:
-	dh $@ --with python3
+	dh $@ --with python3 --buildsystem=pybuild
 
 override_dh_auto_install:
 	dh_auto_install
 	install -D -m 644 src/mythcommflagwrapper/data_files/comskip.ini debian/python3-mythcommflagwrapper/etc/mythcommflagwrapper/comskip.ini
+	install -D -m 755 src/mythcommflagwrapper/scripts/mythcommflag-wrapper debian/python3-mythcommflagwrapper/usr/bin/mythcommflag-wrapper

@@ -1,3 +1,15 @@
+mythcommflagwrapper (0.1.2ubuntu1) noble; urgency=medium
+
+  * Include cli
+
+ -- Charlie Rusbridger <charlie@rusbridger.com>  Fri, 24 Jan 2025 20:01:35 +0000
+
+mythcommflagwrapper (0.1.2) noble; urgency=medium
+
+  * Fix packaging issues
+
+ -- Charlie Rusbridger <charlie@rusbridger.com>  Fri, 24 Jan 2025 19:45:54 +0000
+
 mythcommflagwrapper (0.1.1-1ubuntu5) noble; urgency=medium
 
   * Poetry build
