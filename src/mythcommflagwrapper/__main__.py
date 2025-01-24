@@ -47,9 +47,7 @@ class BaseRecording:
         else:
             self._commmethod = self._channel.commmethod
 
-        dirs = list(
-            self._db.getStorageGroup(groupname=self._recorded.storagegroup)
-        )
+        dirs = list(self._db.getStorageGroup(groupname=self._recorded.storagegroup))
         dirname = Path(dirs[0].dirname)
         self._filename = dirname / self._recorded.basename
         self._callsign = self._program.callsign
@@ -133,9 +131,7 @@ class BaseRecording:
             logger.info(f"fps:       {self._fps}")
 
             # self._filename.name is the basename
-            edl_file = Path(tmpdir) / Path(self._filename.name).with_suffix(
-                ".edl"
-            )
+            edl_file = Path(tmpdir) / Path(self._filename.name).with_suffix(".edl")
 
             # EDL format:
             # start   end     type
@@ -162,9 +158,7 @@ class BaseRecording:
 
     def set_skiplist(self, skiplist=List[str]):
         """Sets the skiplist for the recording, or clear if no breaks found."""
-        starttime = self._starttime.astimezone(tz=timezone.utc).strftime(
-            "%Y%m%d%H%M%S"
-        )
+        starttime = self._starttime.astimezone(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
 
         skiplistargs = [
             "mythutil",
@@ -274,14 +268,10 @@ def main():
     Get arguments from the command line, grab the job information for the
     recording and generate a skiplist for mythutil with comskip.
     """
-    parser = argparse.ArgumentParser(
-        description="Wrapper around comflag for MythTV"
-    )
+    parser = argparse.ArgumentParser(description="Wrapper around comflag for MythTV")
 
     parser.add_argument("--jobid", type=str, required=False, help="The Job ID")
-    parser.add_argument(
-        "--chanid", type=str, required=False, help="The Channel id"
-    )
+    parser.add_argument("--chanid", type=str, required=False, help="The Channel id")
     parser.add_argument(
         "--starttime",
         type=str,
@@ -306,9 +296,7 @@ def main():
 
     if not args.jobid and not (args.starttime and args.chanid):
         logger.error("Expected either --jobid or --chanid and --starttime")
-        raise RuntimeError(
-            "Expected either --jobid or --chanid and --starttime"
-        )
+        raise RuntimeError("Expected either --jobid or --chanid and --starttime")
 
     logger.debug(f"Starting new run; options: {args}")
 
