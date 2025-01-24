@@ -12,17 +12,16 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-MythTV = "*"
 
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.poetry.scripts]
 mythcommflag-wrapper = "mythcommflagwrapper.scripts.mythcommflag-wrapper:main"
-
-[tool.poetry.data-files]
-"etc/mythcommflagwrapper" = ["comskip.ini"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
