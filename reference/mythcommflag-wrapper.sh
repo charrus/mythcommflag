@@ -72,7 +72,7 @@ use_comskip() {
 
 	cd $TMPDIR
 	touch `basename $filename`.touch
-	/usr/local/bin/comskip --ini=/usr/local/bin/cpruk.ini --output=$TMPDIR --output-filename=cutlist --ts $filename | tee -a $LOGFILE
+	/usr/local/bin/comskip --ini=/etc/mythcommflagwrapper/comskip.ini --output=$TMPDIR --output-filename=cutlist --ts $filename | tee -a $LOGFILE
 
 	CUTLIST=`cat cutlist.txt | awk -e 'BEGIN{ORS=","} /[0-9]+\s+[0-9]+/ { print $1"-"$2 }'`
 	echo "use-comskip has generated cutlist: $CUTLIST" >>$LOGFILE 
