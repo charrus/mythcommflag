@@ -71,6 +71,9 @@ select = [
     "C",  # flake8-comprehensions
     "B",  # flake8-bugbear
 ]
+ignore = [
+    "RUF200", # poetry < 2 uses old format for authors
+]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
