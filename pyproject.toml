@@ -1,11 +1,24 @@
 [project]
+name = "mythcommflagwrapper"
+description = "Wrapper around comskip for use by MythTV"
 dynamic = ["dependencies", "requires-python"]
 license = "MIT"
 readme = "README.md"
+authors = [
+    {name = "Charlie Rusbridger", email = "charlie@rusbridger.com"}
+]
 repository = "https://github.com/charrus/mythcommflag"
 packages = [
     { include = "mythcommflagwrapper", from = "src" }
 ]
+version = "0.1.2"
+
+[project.urls]
+Repository = "https://github.com/charrus/mythcommflag"
+Issues = "https://github.com/charrus/mythcommflag/issues"
+
+[project.scripts]
+mythcommflag-wrapper = "mythcommflagwrapper.scripts.mythcommflag-wrapper:main"
 
 [tool.poetry]
 name = "mythcommflagwrapper"
@@ -19,9 +32,6 @@ python = "^3.12"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
-
-[project.scripts]
-mythcommflag-wrapper = "mythcommflagwrapper.scripts.mythcommflag-wrapper:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
@@ -119,3 +129,11 @@ warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_any_expr = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+strict_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
