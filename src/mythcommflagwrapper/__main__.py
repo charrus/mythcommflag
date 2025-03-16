@@ -34,8 +34,8 @@ class BaseRecording:
         self._filename: Path = Path("")
         self._db: MythDB
         self._recorded: Recorded
-        self._program: Program
-        self._recordedfile: RecordedFile
+        self._program: Program  # noqa: F821
+        self._recordedfile: RecordedFile  # noqa: F821
         self._channel: Channel
         self._commmethod: int
         self._callsign: str
