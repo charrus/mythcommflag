@@ -1,7 +1,8 @@
 # Mythcommflagwrapper
 
-A simple library with CLI interface for exerimenting with python, current
-packaging best practices.
+A Python wrapper for [Comskip](https://github.com/erikkaashoek/Comskip) that integrates with MythTV's commercial flagging system. It identifies commercial segments in recordings and updates the MythTV database accordingly.
+
+This project follows modern Python packaging practices and provides both CLI and programmatic interfaces.
 
 The aim of this project is to offer a easy way to use [Comskip](https://github.com/erikkaashoek/Comskip). This needs to be built and installed first.
 
@@ -20,6 +21,8 @@ This is very much work in progress - which explains:
 - [Mythcommflagwrapper](#mythcommflagwrapper)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
+  - [Usage](#usage)
+  - [Development](#development)
   - [License](#license)
 
 ## Installation
@@ -56,6 +59,7 @@ Information seems to be rather scattered with best practices - so here are some 
 * [LocalAptGetRepository](https://help.ubuntu.com/community/LocalAptGetRepository)
 * [Creating and hosting your own .deb packages and apt repository](https://earthly.dev/blog/creating-and-hosting-your-own-deb-packages-and-apt-repo/)
 * [In output from apt update, what do inrelease and release refer to?](https://unix.stackexchange.com/questions/498033/in-output-from-apt-update-what-do-inrelease-and-release-refer-to)
+
 ## Usage
 
 Use:
@@ -64,6 +68,40 @@ Use:
 
 as the Commercial Detection Command on the "General Backend Settings -> Job Queue (Global)"
 page in the MythTV Setup web (port 6544)
+
+## Development
+
+### Setup Development Environment
+
+```console
+# Clone the repository
+git clone https://github.com/charrus/mythcommflag.git
+cd mythcommflag
+
+# Set up development environment using Poetry
+poetry install
+```
+
+### Running Tests
+
+```console
+poetry run pytest
+```
+
+### Code Style
+
+This project uses ruff for linting and formatting. Run:
+
+```console
+poetry run ruff check .
+poetry run ruff format .
+```
+
+### Type Checking
+
+```console
+poetry run mypy src/
+```
 
 ## License
 
