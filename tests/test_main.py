@@ -133,6 +133,43 @@ class TestBaseRecording(unittest.TestCase):
         self.recording._commmethod = COMM_DETECT_OFF
         self.assertEqual(self.recording.get_skiplist(), [])
 
+    @patch("mythcommflagwrapper.__main__.subprocess.run")
+    @patch("mythcommflagwrapper.__main__.TemporaryDirectory")
+    def test_call_comskip_success(self, mock_tempdir, mock_run):
+        """Test successful comskip commercial detection."""
+        # Setup mocks
+        mock_tempdir.return_value.__enter__.return_value = "/tmp/test"
+
+        # Setup subprocess mock
+        mock_process = MagicMock()
+        mock_process.returncode = 0
+        mock_process.stdout = "Frame Rate set to 25.0 f/s"
+        mock_run.return_value = mock_process
+
+        # Setup Path.open mock with EDL file content
+        mock_open = MagicMock()
+        mock_open.__enter__.return_value.__iter__.return_value = [
+            "0.00    54.80   3\n",
+            "718.00  969.80  3\n",
+        ]
+
+        # Setup path attributes
+        self.recording._filename = Path("/var/lib/mythtv/test.mpg")
+
+        with patch("pathlib.Path.open", return_value=mock_open):
+            result = self.recording.call_comskip()
+
+        # Verify results
+        self.assertEqual(result, ["1-1371", "17951-24246"])
+        self.assertEqual(self.recording._fps, 25.0)
+
+        # Verify command called
+        mock_run.assert_called_once()
+        args = mock_run.call_args[0][0]
+        self.assertEqual(args[0], "comskip")
+        self.assertEqual(args[1], "--ini=/etc/mythcommflagwrapper/comskip.ini")
+        self.assertTrue(args[2].startswith("--output="))
+
 
 class TestRecording(unittest.TestCase):
     """Test Recording class."""
