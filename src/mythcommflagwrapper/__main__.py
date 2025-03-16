@@ -10,7 +10,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, List, Union
+from typing import List, Union
 
 from MythTV import Channel, Job, MythDB, Recorded, exceptions  # type: ignore
 
