@@ -34,8 +34,8 @@ class BaseRecording:
         self._filename: Path = Path("")
         self._db: MythDB
         self._recorded: Recorded
-        self._program: Any  # Replace with proper type from MythTV
-        self._recordedfile: Any  # Replace with proper type from MythTV
+        self._program: Program
+        self._recordedfile: RecordedFile
         self._channel: Channel
         self._commmethod: int
         self._callsign: str
