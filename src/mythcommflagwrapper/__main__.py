@@ -63,13 +63,13 @@ class BaseRecording:
     # Method to run arbitary commands, log the command and the output
     def _run(self, args: List[str]) -> subprocess.CompletedProcess[str]:
         """Run a command and log its output.
-        
+
         Args:
             args: Command and arguments to execute
-            
+
         Returns:
             CompletedProcess instance with command results
-            
+
         Raises:
             subprocess.SubprocessError: If command execution fails
         """
@@ -126,10 +126,10 @@ class BaseRecording:
 
     def call_comskip(self) -> List[str]:
         """Run comskip to generate a skiplist for the recording.
-        
+
         Returns:
             List of skiplist entries
-            
+
         Raises:
             ComskipError: If comskip execution fails
         """
