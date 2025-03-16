@@ -1,7 +1,6 @@
 # Mythcommflagwrapper
 
-A simple library with CLI interface for exerimenting with python, current
-packaging best practices.
+A simple library with CLI interface for exerimenting with python, current packaging best practices, and trying out LLM models for code review and unit tests.
 
 The aim of this project is to offer a easy way to use [Comskip](https://github.com/erikkaashoek/Comskip). This needs to be built and installed first.
 
