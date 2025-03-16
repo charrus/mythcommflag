@@ -15,6 +15,9 @@ mock_mythtv = MagicMock()
 # Setup Job class with STARTING constant
 mock_job_class = MagicMock()
 mock_job_class.STARTING = 1
+mock_job_class.RUNNING = 2
+mock_job_class.FINISHED = 4
+mock_job_class.ERRORED = 256
 mock_mythtv.Job = mock_job_class
 
 mock_mythtv.MythDB = MagicMock()
