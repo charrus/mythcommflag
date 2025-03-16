@@ -10,7 +10,7 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, Union, Any
+from typing import Any, List, Union
 
 from MythTV import Channel, Job, MythDB, Recorded, exceptions  # type: ignore
 
@@ -138,10 +138,10 @@ class BaseRecording:
         with TemporaryDirectory() as tmpdir:
             tmp_path = Path(tmpdir)
             comskip_cmd = self._build_comskip_command(tmp_path)
-            
+
             try:
                 comskip = self._run(comskip_cmd)
-                
+
                 if comskip.returncode == 1:  # No breaks detected
                     return []
                 elif comskip.returncode != 0:
@@ -149,7 +149,7 @@ class BaseRecording:
 
                 self._fps = self._extract_fps(comskip.stdout)
                 skiplist = self._parse_edl_file(tmp_path)
-                
+
             except (subprocess.SubprocessError, ComskipError) as e:
                 logger.error("Comskip processing failed: %s", e)
                 raise
@@ -163,10 +163,10 @@ class BaseRecording:
             "--ini=/etc/mythcommflagwrapper/comskip.ini",
             f"--output={output_dir}",
         ]
-        
+
         if self._filename.suffix == ".ts":
             cmd.append("--ts")
-            
+
         cmd.append(self.filename)
         return cmd
 
@@ -179,7 +179,7 @@ class BaseRecording:
             return fps
         raise ComskipError("Could not determine FPS from comskip output")
 
-    def set_skiplist(self, skiplist=List[str]):
+    def set_skiplist(self, skiplist: List[str] = []) -> None:
         """Sets the skiplist for the recording, or clear if no breaks found."""
         starttime = self._starttime.astimezone(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
 
@@ -294,7 +294,7 @@ def setup_logging(level: str) -> None:
     numeric_level = getattr(logging, level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError(f"Invalid log level: {level}")
-        
+
     logging.basicConfig(
         filename=LOGFILE,
         level=numeric_level,
