@@ -172,7 +172,7 @@ class BaseRecording:
 
     def _extract_fps(self, stdout: str) -> float:
         """Extract FPS value from comskip output."""
-
+        #
         # EDL format:
         # start   end     type
         # start: seconds
