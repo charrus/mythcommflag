@@ -5,3 +5,15 @@ dist
 *.pyc
 poetry.lock
 **/__pycache__
+.pybuild
+**/DEBIAN
+*.debhelper
+*.debhelper.log
+debian/python3-mythcommflagwrapper
+debian/python3-mythcommflagwrapper.substvars
+debian/python3-mythcommflagwrapper.postinst
+debian/python3-mythcommflagwrapper.postrm
+debian/python3-mythcommflagwrapper.preinst
+debian/python3-mythcommflagwrapper.prerm
+debian/python3-mythcommflagwrapper.preinst
+debian/python3-mythcommflagwrapper.prerm

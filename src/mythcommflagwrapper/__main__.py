@@ -27,11 +27,19 @@ logger = logging.getLogger("mythcommflagwrapper")
 class BaseRecording:
     """Base class for recordings."""
 
-    def __init__(self):
-        """Base class for recordings."""
+    def __init__(self) -> None:
+        """Initialize base recording attributes."""
         self._chanid: int
         self._starttime: datetime
         self._filename: Path = Path("")
+        self._db: MythDB
+        self._recorded: Recorded
+        self._program: Program  # noqa: F821
+        self._recordedfile: RecordedFile  # noqa: F821
+        self._channel: Channel
+        self._commmethod: int
+        self._callsign: str
+        self._fps: float
 
     def _get_recording(self):
         self._db = MythDB()
@@ -53,14 +61,30 @@ class BaseRecording:
         self._callsign = self._program.callsign
 
     # Method to run arbitary commands, log the command and the output
-    def _run(self, args: List[str]):
-        logger.info(f"Running: {' '.join(args)}")
+    def _run(self, args: List[str]) -> subprocess.CompletedProcess[str]:
+        """Run a command and log its output.
 
-        proc = subprocess.run(
-            args,
-            capture_output=True,
-            encoding="utf-8",
-        )
+        Args:
+            args: Command and arguments to execute
+
+        Returns:
+            CompletedProcess instance with command results
+
+        Raises:
+            subprocess.SubprocessError: If command execution fails
+        """
+        logger.info("Running: %s", " ".join(args))
+
+        try:
+            proc = subprocess.run(
+                args,
+                capture_output=True,
+                encoding="utf-8",
+                check=False,
+            )
+        except subprocess.SubprocessError as e:
+            logger.error("Command execution failed: %s", e)
+            raise
 
         for line in proc.stdout.splitlines():
             logger.info(line)
@@ -101,62 +125,73 @@ class BaseRecording:
             return self.call_comskip()
 
     def call_comskip(self) -> List[str]:
-        """Run comskip to generate a skiplist for the recording."""
+        """Run comskip to generate a skiplist for the recording.
+
+        Returns:
+            List of skiplist entries
+
+        Raises:
+            ComskipError: If comskip execution fails
+        """
         skiplist: List[str] = []
 
         with TemporaryDirectory() as tmpdir:
-            comskip_cmd = [
-                "comskip",
-                "--ini=/etc/mythcommflagwrapper/comskip.ini",
-                f"--output={tmpdir}",
-            ]
+            tmp_path = Path(tmpdir)
+            comskip_cmd = self._build_comskip_command(tmp_path)
 
-            if self._filename.suffix == ".ts":
-                comskip_cmd.append("--ts")
+            try:
+                comskip = self._run(comskip_cmd)
 
-            comskip_cmd.append(self.filename)
+                if comskip.returncode == 1:  # No breaks detected
+                    return []
+                elif comskip.returncode != 0:
+                    raise ComskipError(f"comskip failed: {comskip.stderr}")
 
-            comskip = self._run(comskip_cmd)
+                self._fps = self._extract_fps(comskip.stdout)
+                skiplist = self._parse_edl_file(tmp_path)
 
-            # Successful run, but no breaks detected
-            if comskip.returncode == 1:
-                return []
-            elif comskip.returncode != 0:
-                logger.error(f"comskip failed: {comskip.stderr}")
-                raise Exception("comskip failed")
-
-            fps_re = re.compile(r"(?s).*Frame Rate set to ([^ ]+) f/s.*")
-            m = fps_re.match(comskip.stdout)
-            self._fps = float(m.group(1))
-            logger.info(f"fps:       {self._fps}")
-
-            # self._filename.name is the basename
-            edl_file = Path(tmpdir) / Path(self._filename.name).with_suffix(".edl")
-
-            # EDL format:
-            # start   end     type
-            # start: seconds
-            # end: seconds
-            # type: 0 = Cut, 1 = Mute, 2 = Scene, 3 = Commercials
-            #
-            # 0.00    54.80   3
-            # 718.00  969.80  3
-            # 1640.04 1891.80 3
-            # 2546.64 2798.80 3
-
-            skiplist_re = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+\d")
-
-            with edl_file.open() as edl_lines:
-                for line in edl_lines:
-                    if m := skiplist_re.match(line):
-                        # Frame number = (time * fps) + 1
-                        start = int(float(m.group(1)) * self._fps) + 1
-                        end = int(float(m.group(2)) * self._fps) + 1
-                        skiplist.append(f"{start}-{end}")
+            except (subprocess.SubprocessError, ComskipError) as e:
+                logger.error("Comskip processing failed: %s", e)
+                raise
 
         return skiplist
 
-    def set_skiplist(self, skiplist=List[str]):
+    def _build_comskip_command(self, output_dir: Path) -> List[str]:
+        """Build comskip command with appropriate arguments."""
+        cmd = [
+            "comskip",
+            "--ini=/etc/mythcommflagwrapper/comskip.ini",
+            f"--output={output_dir}",
+        ]
+
+        if self._filename.suffix == ".ts":
+            cmd.append("--ts")
+
+        cmd.append(self.filename)
+        return cmd
+
+    def _extract_fps(self, stdout: str) -> float:
+        """Extract FPS value from comskip output."""
+        #
+        # EDL format:
+        # start   end     type
+        # start: seconds
+        # end: seconds
+        # type: 0 = Cut, 1 = Mute, 2 = Scene, 3 = Commercials
+        #
+        # 0.00    54.80   3
+        # 718.00  969.80  3
+        # 1640.04 1891.80 3
+        # 2546.64 2798.80 3
+
+        fps_re = re.compile(r"(?s).*Frame Rate set to ([^ ]+) f/s.*")
+        if m := fps_re.match(stdout):
+            fps = float(m.group(1))
+            logger.info("fps: %f", fps)
+            return fps
+        raise ComskipError("Could not determine FPS from comskip output")
+
+    def set_skiplist(self, skiplist: List[str] = ()) -> None:
         """Sets the skiplist for the recording, or clear if no breaks found."""
         starttime = self._starttime.astimezone(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
 
@@ -262,12 +297,25 @@ class Recording(BaseRecording):
         super()._get_recording()
 
 
-def main():
-    """Mythcommflagwrapper.
+class ComskipError(Exception):
+    """Raised when comskip processing fails."""
+    pass
 
-    Get arguments from the command line, grab the job information for the
-    recording and generate a skiplist for mythutil with comskip.
-    """
+def setup_logging(level: str) -> None:
+    """Configure logging with proper formatting and handling."""
+    numeric_level = getattr(logging, level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f"Invalid log level: {level}")
+
+    logging.basicConfig(
+        filename=LOGFILE,
+        level=numeric_level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+def main() -> None:
+    """Main entry point for mythcommflagwrapper."""
     parser = argparse.ArgumentParser(description="Wrapper around comflag for MythTV")
 
     parser.add_argument("--jobid", type=str, required=False, help="The Job ID")
@@ -282,42 +330,36 @@ def main():
 
     args = parser.parse_args()
 
-    # Set the log level
-    loglevel = args.loglevel
-    numeric_level = getattr(logging, loglevel.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError(f"Invalid log level: {loglevel}")
-    logging.basicConfig(
-        filename=LOGFILE,
-        level=numeric_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+    try:
+        setup_logging(args.loglevel)
 
-    if not args.jobid and not (args.starttime and args.chanid):
-        logger.error("Expected either --jobid or --chanid and --starttime")
-        raise RuntimeError("Expected either --jobid or --chanid and --starttime")
+        if not args.jobid and not (args.starttime and args.chanid):
+            logger.error("Expected either --jobid or --chanid and --starttime")
+            raise RuntimeError("Expected either --jobid or --chanid and --starttime")
 
-    logger.debug(f"Starting new run; options: {args}")
+        logger.debug(f"Starting new run; options: {args}")
 
-    recording: Union[RecordingJob, Recording]
-    if args.jobid:
-        logger.info(f"jobid:  {args.jobid}")
-        recording = RecordingJob(args.jobid)
-    else:
-        logger.info(f"chanid:  {args.chanid}")
-        logger.info(f"starttime:  {args.starttime}")
-        recording = Recording(args.chanid, args.starttime)
+        recording: Union[RecordingJob, Recording]
+        if args.jobid:
+            logger.info(f"jobid:  {args.jobid}")
+            recording = RecordingJob(args.jobid)
+        else:
+            logger.info(f"chanid:  {args.chanid}")
+            logger.info(f"starttime:  {args.starttime}")
+            recording = Recording(args.chanid, args.starttime)
 
-    logger.info(f"filename:  {recording.filename}")
-    logger.info(f"title:     {recording.title}")
-    logger.info(f"subtitle:  {recording.subtitle}")
-    logger.info(f"callsign:  {recording.callsign}")
+        logger.info(f"filename:  {recording.filename}")
+        logger.info(f"title:     {recording.title}")
+        logger.info(f"subtitle:  {recording.subtitle}")
+        logger.info(f"callsign:  {recording.callsign}")
 
-    skiplist = recording.get_skiplist()
-    recording.set_skiplist(skiplist)
+        skiplist = recording.get_skiplist()
+        recording.set_skiplist(skiplist)
 
-    logger.info(f"{len(skiplist)} break(s) found.")
+        logger.info(f"{len(skiplist)} break(s) found.")
+    except Exception as e:
+        logger.error("Fatal error: %s", e)
+        raise
 
 
 if __name__ == "__main__":

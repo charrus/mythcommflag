@@ -4,6 +4,7 @@ A Python wrapper for [Comskip](https://github.com/erikkaashoek/Comskip) that int
 
 This project follows modern Python packaging practices and provides both CLI and programmatic interfaces.
 
+
 The aim of this project is to offer a easy way to use [Comskip](https://github.com/erikkaashoek/Comskip). This needs to be built and installed first.
 
 This is very much work in progress - which explains:
