@@ -191,7 +191,7 @@ class BaseRecording:
             return fps
         raise ComskipError("Could not determine FPS from comskip output")
 
-    def set_skiplist(self, skiplist: List[str] = []) -> None:
+    def set_skiplist(self, skiplist: List[str] = ()) -> None:
         """Sets the skiplist for the recording, or clear if no breaks found."""
         starttime = self._starttime.astimezone(tz=timezone.utc).strftime("%Y%m%d%H%M%S")
 
