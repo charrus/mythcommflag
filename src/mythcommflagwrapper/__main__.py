@@ -172,6 +172,18 @@ class BaseRecording:
 
     def _extract_fps(self, stdout: str) -> float:
         """Extract FPS value from comskip output."""
+
+        # EDL format:
+        # start   end     type
+        # start: seconds
+        # end: seconds
+        # type: 0 = Cut, 1 = Mute, 2 = Scene, 3 = Commercials
+        #
+        # 0.00    54.80   3
+        # 718.00  969.80  3
+        # 1640.04 1891.80 3
+        # 2546.64 2798.80 3
+
         fps_re = re.compile(r"(?s).*Frame Rate set to ([^ ]+) f/s.*")
         if m := fps_re.match(stdout):
             fps = float(m.group(1))
