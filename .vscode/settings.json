@@ -1,11 +1,12 @@
 {
   "ruff.nativeServer": "on",
   "[python]": {
-    "editor.formatOnSave": true,
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "python.experiments.enabled": false,
   "ruff.configuration": "pyproject.toml",
+  "ruff.format": true,
+  "ruff.formatOnSave": true,
   "python.terminal.shellIntegration.enabled": true,
   "debugpy.debugJustMyCode": false
 }
