@@ -179,9 +179,10 @@ class BaseRecording:
             return fps
         raise ComskipError("Could not determine FPS from comskip output")
 
-    def _parse_edl_file(self, edl_file: Path) -> List[str]:
+    def _parse_edl_file(self, comskipdir: Path) -> List[str]:
         """Parse EDL file and return skiplist."""
         skiplist: List[str] = []
+        edl_file = Path(comskipdir) / Path(self._filename.name).with_suffix(".edl")
 
         #
         # EDL format:
