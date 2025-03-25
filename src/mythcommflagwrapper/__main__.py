@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: UTF-8 -*-
+# -*- coding: utf-8-unix -*-
 
 """Wrapper around comskip for use by MythTV."""
 
@@ -184,7 +184,7 @@ class BaseRecording:
         # 1640.04 1891.80 3
         # 2546.64 2798.80 3
 
-        fps_re = re.compile(r"(?s).*Frame Rate set to ([^ ]+) f/s.*")
+        fps_re = re.compile(r"(?s).*Average framerate:\s+(\S+)")
         if m := fps_re.match(stdout):
             fps = float(m.group(1))
             logger.info("fps: %f", fps)
