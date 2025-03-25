@@ -172,6 +172,17 @@ class BaseRecording:
 
     def _extract_fps(self, stdout: str) -> float:
         """Extract FPS value from comskip output."""
+        fps_re = re.compile(r"(?s).*Average framerate:\s+(\S+)")
+        if m := fps_re.match(stdout):
+            fps = float(m.group(1))
+            logger.info("fps: %f", fps)
+            return fps
+        raise ComskipError("Could not determine FPS from comskip output")
+
+    def _parse_edl_file(self, edl_file: Path) -> List[str]:
+        """Parse EDL file and return skiplist."""
+        skiplist: List[str] = []
+
         #
         # EDL format:
         # start   end     type
@@ -184,12 +195,17 @@ class BaseRecording:
         # 1640.04 1891.80 3
         # 2546.64 2798.80 3
 
-        fps_re = re.compile(r"(?s).*Average framerate:\s+(\S+)")
-        if m := fps_re.match(stdout):
-            fps = float(m.group(1))
-            logger.info("fps: %f", fps)
-            return fps
-        raise ComskipError("Could not determine FPS from comskip output")
+        skiplist_re = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+\d")
+
+        with edl_file.open() as edl_lines:
+            for line in edl_lines:
+                if m := skiplist_re.match(line):
+                    # Frame number = (time * fps) + 1
+                    start = int(float(m.group(1)) * self._fps) + 1
+                    end = int(float(m.group(2)) * self._fps) + 1
+                    skiplist.append(f"{start}-{end}")
+
+        return skiplist
 
     def set_skiplist(self, skiplist: List[str] = ()) -> None:
         """Sets the skiplist for the recording, or clear if no breaks found."""
