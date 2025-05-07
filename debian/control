@@ -14,7 +14,9 @@ Architecture: all
 Depends: ${python3:Depends},
          ${misc:Depends},
          mythtv-backend,
-         libmyth-python
+         libmyth-python,
+         python3-lxml,
+         python3-mysqldb
 Description: MythTV commercial detection wrapper using Comskip
  A wrapper around Comskip for use by MythTV's commercial detection system.
  This package provides a Python interface and CLI tool to use Comskip

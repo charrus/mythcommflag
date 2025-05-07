@@ -10,38 +10,12 @@
             "request": "launch",
             "module": "mythcommflagwrapper.__main__",
             "args": [
-                //                "--starttime", "20241029200000",
-                "--jobid",
-                "6826",
-                //                "--chanid", "77986"
+                "--starttime", "20250507095000", // 2025-05-07 09:50:00 
+                //"--jobid",
+                //"6826",
+                "--chanid", "78052",
+                "--comskipini", "${workspaceFolder}/src/mythcommflagwrapper/data_files/comskip.ini"
             ],
         },
-        {
-            "name": "Python Debugger: Current File with Arguments",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "args": [
-                //                "--starttime", "20241029200000",
-                "--jobid",
-                "6826",
-                //                "--chanid", "77986"
-            ],
-        },
-        {
-            "name": "Mythcommflag",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "src/mythcommflag-wrapper.py",
-            "console": "integratedTerminal",
-            "args": [
-                //                "--starttime", "20241029200000",
-                "--jobid",
-                "6826",
-                //                "--chanid", "77986"
-            ],
-            "justMyCode": false
-        }
     ]
 }

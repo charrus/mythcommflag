@@ -1,3 +1,10 @@
+mythcommflagwrapper (0.1.4) noble; urgency=medium
+
+  * Remove edl parsing, and use cutlist output as this removes the dependency
+    on fps (which can change during a recording).
+
+ -- Charlie Rusbridger <charlie@rusbridger.com>  Wed, 07 May 2025 15:47:57 +0100
+
 mythcommflagwrapper (0.1.3ubuntu2) noble; urgency=medium
 
   * Fix missing _parse_edl_file.
