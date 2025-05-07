@@ -12,9 +12,22 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Union
 
-from MythTV import Channel, Job, MythDB, Recorded, exceptions  # type: ignore
+from MythTV import (  # type: ignore
+    Channel,
+    Job,
+    MythDB,
+    Program,
+    Recorded,
+    RecordedFile,
+    exceptions,
+)
 
-from .const import COMM_DETECT_COMMFREE, COMM_DETECT_OFF, COMM_DETECT_UNINIT
+from .const import (
+    COMM_DETECT_COMMFREE,
+    COMM_DETECT_OFF,
+    COMM_DETECT_UNINIT,
+    COMMSKIP_INI,
+)
 
 LOGFILE = "/var/log/mythtv/mythcommflag.log"
 
@@ -27,19 +40,19 @@ logger = logging.getLogger("mythcommflagwrapper")
 class BaseRecording:
     """Base class for recordings."""
 
-    def __init__(self) -> None:
+    def __init__(self, **kwargs) -> None:
         """Initialize base recording attributes."""
         self._chanid: int
         self._starttime: datetime
         self._filename: Path = Path("")
         self._db: MythDB
         self._recorded: Recorded
-        self._program: Program  # noqa: F821
-        self._recordedfile: RecordedFile  # noqa: F821
+        self._program: Program
+        self._recordedfile: RecordedFile
         self._channel: Channel
         self._commmethod: int
         self._callsign: str
-        self._fps: float
+        self._ini_file = kwargs.get("comskipini", COMMSKIP_INI)
 
     def _get_recording(self):
         self._db = MythDB()
@@ -147,8 +160,7 @@ class BaseRecording:
                 elif comskip.returncode != 0:
                     raise ComskipError(f"comskip failed: {comskip.stderr}")
 
-                self._fps = self._extract_fps(comskip.stdout)
-                skiplist = self._parse_edl_file(tmp_path)
+                skiplist = self._parse_cutlist_file(tmp_path)
 
             except (subprocess.SubprocessError, ComskipError) as e:
                 logger.error("Comskip processing failed: %s", e)
@@ -160,7 +172,7 @@ class BaseRecording:
         """Build comskip command with appropriate arguments."""
         cmd = [
             "comskip",
-            "--ini=/etc/mythcommflagwrapper/comskip.ini",
+            f"--ini={self._ini_file}",
             f"--output={output_dir}",
         ]
 
@@ -170,41 +182,23 @@ class BaseRecording:
         cmd.append(self.filename)
         return cmd
 
-    def _extract_fps(self, stdout: str) -> float:
-        """Extract FPS value from comskip output."""
-        fps_re = re.compile(r"(?s).*Average framerate:\s+(\S+)")
-        if m := fps_re.match(stdout):
-            fps = float(m.group(1))
-            logger.info("fps: %f", fps)
-            return fps
-        raise ComskipError("Could not determine FPS from comskip output")
-
-    def _parse_edl_file(self, comskipdir: Path) -> List[str]:
-        """Parse EDL file and return skiplist."""
+    def _parse_cutlist_file(self, comskipdir: Path) -> List[str]:
+        """Parse cutlist file and return skiplist."""
         skiplist: List[str] = []
-        edl_file = Path(comskipdir) / Path(self._filename.name).with_suffix(".edl")
+        cutlist_file = Path(comskipdir) / Path(self._filename.name).with_suffix(".txt")
 
-        #
-        # EDL format:
-        # start   end     type
-        # start: seconds
-        # end: seconds
-        # type: 0 = Cut, 1 = Mute, 2 = Scene, 3 = Commercials
-        #
-        # 0.00    54.80   3
-        # 718.00  969.80  3
-        # 1640.04 1891.80 3
-        # 2546.64 2798.80 3
+        # FILE PROCESSING COMPLETE  47970 FRAMES AT  2500
+        # -------------------
+        # 1       3589
+        # 18702   25873
+        # 47662   47970
 
-        skiplist_re = re.compile(r"([0-9.]+)\s+([0-9.]+)\s+\d")
+        skiplist_re = re.compile(r"(\d+)\s+(\d+)")
 
-        with edl_file.open() as edl_lines:
-            for line in edl_lines:
+        with cutlist_file.open() as cutlist_lines:
+            for line in cutlist_lines:
                 if m := skiplist_re.match(line):
-                    # Frame number = (time * fps) + 1
-                    start = int(float(m.group(1)) * self._fps) + 1
-                    end = int(float(m.group(2)) * self._fps) + 1
-                    skiplist.append(f"{start}-{end}")
+                    skiplist.append(f"{m.group(1)}-{m.group(2)}")
 
         return skiplist
 
@@ -237,9 +231,9 @@ class RecordingJob(BaseRecording):
     Recording from a job.
     """
 
-    def __init__(self, jobid: str):
+    def __init__(self, jobid: str, **kwargs):
         """Recoding from a job."""
-        super().__init__()
+        super().__init__(**kwargs)
 
         self._jobid = jobid
         self._job = Job(self._jobid)
@@ -302,9 +296,9 @@ class Recording(BaseRecording):
     Recording with chanid and starttime in YYMMDDhhmmss format.
     """
 
-    def __init__(self, chanid: int, starttime: str):
+    def __init__(self, chanid: int, starttime: str, **kwargs):
         """Recording with chanid and starttime in YYMMDDhhmmss format."""
-        super().__init__()
+        super().__init__(**kwargs)
 
         self._chanid = chanid
         self._starttime = datetime.strptime(starttime, "%Y%m%d%H%M%S").replace(
@@ -316,7 +310,9 @@ class Recording(BaseRecording):
 
 class ComskipError(Exception):
     """Raised when comskip processing fails."""
+
     pass
+
 
 def setup_logging(level: str) -> None:
     """Configure logging with proper formatting and handling."""
@@ -331,12 +327,20 @@ def setup_logging(level: str) -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
+
 def main() -> None:
     """Main entry point for mythcommflagwrapper."""
     parser = argparse.ArgumentParser(description="Wrapper around comflag for MythTV")
 
     parser.add_argument("--jobid", type=str, required=False, help="The Job ID")
     parser.add_argument("--chanid", type=str, required=False, help="The Channel id")
+    parser.add_argument(
+        "--comskipini",
+        type=str,
+        required=False,
+        help="Override comskip.ini",
+        default=COMMSKIP_INI,
+    )
     parser.add_argument(
         "--starttime",
         type=str,
@@ -359,11 +363,13 @@ def main() -> None:
         recording: Union[RecordingJob, Recording]
         if args.jobid:
             logger.info(f"jobid:  {args.jobid}")
-            recording = RecordingJob(args.jobid)
+            recording = RecordingJob(args.jobid, comskipini=args.comskipini)
         else:
             logger.info(f"chanid:  {args.chanid}")
             logger.info(f"starttime:  {args.starttime}")
-            recording = Recording(args.chanid, args.starttime)
+            recording = Recording(
+                args.chanid, args.starttime, comskipini=args.comskipini
+            )
 
         logger.info(f"filename:  {recording.filename}")
         logger.info(f"title:     {recording.title}")

@@ -164,16 +164,12 @@ class TestBaseRecording(unittest.TestCase):
                 ]
             )
 
-            # Skip file operations but set fps like the original method
+            # Skip file operations
             if comskip.returncode == 1:
                 return []
             elif comskip.returncode != 0:
                 raise Exception("comskip failed")
 
-            # Extract fps like the original method
-            fps_re = re.compile(r"(?s).*Frame Rate set to ([^ ]+) f/s.*")
-            m = fps_re.match(comskip.stdout)
-            self._fps = float(m.group(1))
 
             # Return hardcoded result that matches our test data
             return ["1-1371", "17951-24246"]
@@ -187,7 +183,6 @@ class TestBaseRecording(unittest.TestCase):
 
             # Verify results
             self.assertEqual(result, ["1-1371", "17951-24246"])
-            self.assertEqual(self.recording._fps, 25.0)
 
             # Verify the subprocess command was built correctly
             mock_run.assert_called_once()
