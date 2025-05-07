@@ -39,7 +39,7 @@ build-backend = "poetry.core.masonry.api"
 pytest = "^8.3.5"
 ruff = "^0.3.7"
 mypy = "^1.15.0"
-mythtv = {path = "../mythtv/mythtv/bindings/python/dist/MythTV-34.0-py3-none-any.whl"}
+# mythtv = {path = "../mythtv/mythtv/bindings/python/dist/MythTV-34.0-py3-none-any.whl"}
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
