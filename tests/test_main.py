@@ -3,7 +3,6 @@
 
 """Tests for mythcommflagwrapper main functionality."""
 
-import re
 import sys
 import unittest
 from datetime import datetime, timezone
@@ -169,7 +168,6 @@ class TestBaseRecording(unittest.TestCase):
                 return []
             elif comskip.returncode != 0:
                 raise Exception("comskip failed")
-
 
             # Return hardcoded result that matches our test data
             return ["1-1371", "17951-24246"]
